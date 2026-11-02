@@ -26,6 +26,7 @@ const C = { oak: 0xc9a06a, white: 0xf1efe9, graphite: 0x4a4d52, wood: 0xb98a55, 
 // ---- budulce pozycji ----
 const desk = (id, label, x, y, w, d, extra = {}) => ({ id, type: 'desk', label, x, y, w, d, h: 0.74, color: C.oak, ...extra });
 const chair = (id, x, y) => ({ id, type: 'chair', label: 'Krzesło biurowe (w nocy wsunięte pod blat)', x, y, w: 0.56, d: 0.56, h: 0.95, color: C.graphite, mobile: true, nightDy: -0.45, face: { x: x + 0.28, y: 0 } });
+const plantItem = (cx = 0.30, cy = 0.30) => ({ id: 'plant', type: 'plant', label: 'Monstera w doniczce Ø42 cm, wys. ok. 1,2 m (narożnik NW, jak na zdjęciach)', x: cx - 0.21, y: cy - 0.21, w: 0.42, d: 0.42, h: 1.2, color: 0x2f6b3a });
 const nightstand = (id, x, y, w = 0.40, d = 0.40) => ({ id, type: 'box', label: `Szafka nocna ${Math.round(w * 100)}×${Math.round(d * 100)}×55`, x, y, w, d, h: 0.55, color: C.wood, bedside: true });
 
 // Szafy gości – NIE stoją przy oknie (zasłaniałyby światło): przy słupie albo na ścianie zachodniej, z wolną strefą otwierania drzwi
@@ -56,6 +57,7 @@ const workzone = () => [
   { id: 'lsh', type: 'lshelf', label: 'Półki w kształcie L na kątownikach (dokumenty + drukarka)', arms: [{ x: 2.60, y: 0.0, w: 0.84, d: 0.32 }, { x: 3.12, y: 0.32, w: 0.32, d: 1.23 }], z0: 1.10, h: 1.05, shelves: 4, printerShelf: true, color: C.white, docs: true },
   { id: 'prn', type: 'printer', label: 'Drukarka 42×32×20 na półce', x: 2.66, y: 0.0, w: 0.42, d: 0.32, h: 0.20, z0: 1.12, color: 0x3a3d42, onShelf: true },
   chair('c1', 1.45, 0.80),
+  plantItem(),
 ];
 
 // wariant biurka: 'full' = blat ciągły na wymiar; 'store' = biurko ze sklepu 160×70 pod oknem + blat na wymiar we wnęce, zlicowane
@@ -79,11 +81,11 @@ export const LAYOUTS = [
     short: 'Prosta sofa 170×95, spanie ok. 140×195 wysuwane do przodu (3-częściowa piankowa). Rozłożona zajmuje 170×205 cm. Szafka nocna przy wezgłowiu, komoda z wieszakiem na ścianie zachodniej.',
     pros: ['Sofa to w dzień miejsce odpoczynku, w nocy łóżko – bez osobnego materaca', 'Po rozłożeniu przejście po wschodniej stronie ≈ 0,9 m', 'Okno i narożnik NW wolne – nic wysokiego przy oknie', 'Pojemnik na pościel pod siedziskiem (standard w takich sofach)'],
     cons: ['Materac z pianek składanych ma szwy i jest cieńszy niż w zwykłym łóżku', 'Rozkładanie wymaga 2 m wolnego przed sofą', 'Dostęp do łóżka z jednej strony (druga strona to ściana)', 'Gniazdko G4 za rozłożoną sofą – przenieść przy wezgłowiu'],
-    guest: ['Ubrania: wieszak ścienny 90 cm (ok. 9 ubrań) nad komodą 90×40×85 przy ścianie zachodniej', 'Bagaże: pojemnik w sofie, na komodzie', 'Szafka nocna: 36×38×55 przy wezgłowiu (wschodnia strona sofy)'],
+    guest: ['Ubrania: wieszak ścienny 75 cm (ok. 7 ubrań) nad komodą 75×40×85 przy ścianie zachodniej, za monsterą', 'Bagaże: pojemnik w sofie, na komodzie', 'Szafka nocna: 36×38×55 przy wezgłowiu (wschodnia strona sofy)'],
     items: [
       ...sofaBed('sofa', 'Sofa 2-os. 170×95', { x: 0.05, y: 2.63, w: 1.70, d: 0.95, back: 'S' }, { x: 0.05, y: 1.53, w: 1.70, d: 2.05, back: 'S', head: 'S' }),
       nightstand('ns', 1.78, 3.20, 0.36, 0.38),
-      ...komodaRail(0.55, 0.90),
+      ...komodaRail(0.70, 0.75),
       ...workzone(),
     ],
   },
@@ -97,7 +99,7 @@ export const LAYOUTS = [
     items: [
       ...sofaBed('sofa', 'Sofa 3-os. 210×95', { x: 0.0, y: 2.63, w: 2.10, d: 0.95, back: 'S' }, { x: 0.0, y: 2.13, w: 2.10, d: 1.45, back: 'S', head: 'W' }),
       nightstand('ns', 0.0, 1.76, 0.40, 0.36),
-      ...komodaRail(0.60, 1.00),
+      ...komodaRail(0.70, 1.00),
       ...workzone(),
     ],
   },
@@ -121,13 +123,13 @@ export const LAYOUTS = [
     short: 'Sofa w kształcie L: długie ramię przy ścianie zachodniej i krótsze przy południowej. Po rozłożeniu łóżko ok. 160×205 cm. Szafka nocna po wschodniej stronie wezgłowia, komoda z wieszakiem na ścianie zachodniej.',
     pros: ['W dzień narożnik zapewnia najwięcej miejsca do siedzenia i leżenia (L)', 'Szerokie spanie ≈ 160 cm', 'Po rozłożeniu przejście do strefy biurka ≈ 1 m (przy szafce nocnej 0,6 m)', 'Pojemnik na pościel'],
     cons: ['Narożnik zajmuje rząd 0,95 m wzdłuż zachodniej i południowej ściany cały czas (wolna podłoga ≈ 50%)', 'Rozkładanie wymaga 2 m wolnego', 'Szafka nocna stoi w przejściu (zostaje ≈ 60 cm do słupa)', 'Gniazdko G4 za narożnikiem – przenieść przy wezgłowiu'],
-    guest: ['Ubrania: wieszak ścienny 100 cm nad komodą 100×40×85 przy ścianie zachodniej', 'Bagaże: pojemnik w narożniku, na komodzie', 'Szafka nocna: 36×38×55 po wschodniej stronie wezgłowia'],
+    guest: ['Ubrania: wieszak ścienny 80 cm nad komodą 80×40×85 przy ścianie zachodniej', 'Bagaże: pojemnik w narożniku, na komodzie', 'Szafka nocna: 36×38×55 po wschodniej stronie wezgłowia'],
     items: [
       { id: 'sofa', type: 'sofa', label: 'Narożnik L – długie ramię 95×203', x: 0.0, y: 1.55, w: 0.95, d: 2.03, h: 0.85, color: C.sofa, back: 'W', mode: 'day' },
       { id: 'sofa2', type: 'sofa', label: 'Narożnik L – krótkie ramię 70×95', x: 0.95, y: 2.63, w: 0.70, d: 0.95, h: 0.85, color: C.sofa, back: 'S', mode: 'day' },
       { id: 'sofao', type: 'sofabed', label: 'Narożnik L – rozłożony na łóżko ok. 160×205', x: 0.0, y: 1.55, w: 1.65, d: 2.03, h: 0.50, color: C.sofa, back: 'W', head: 'N', mode: 'night' },
       nightstand('ns', 1.68, 1.55, 0.36, 0.38),
-      ...komodaRail(0.50, 1.00),
+      ...komodaRail(0.70, 0.80),
       ...workzone(),
     ],
   },
@@ -135,12 +137,12 @@ export const LAYOUTS = [
     id: 5, bedType: 'sofa',
     name: 'Sofa 2-os. „amerykanka” przy ścianie zachodniej',
     short: 'Sofa 170×95 przy ścianie zachodniej, rozkładana w głąb pokoju (205 cm). Komoda z wieszakiem na północ od sofy pełni też rolę szafki nocnej.',
-    pros: ['Komoda przy wezgłowiu jest jednocześnie szafką nocną', 'Okno i narożnik NW wolne', 'Pojemnik na pościel w sofie', 'Wieszak 105 cm (ok. 10 ubrań)'],
+    pros: ['Komoda przy wezgłowiu jest jednocześnie szafką nocną', 'Okno i narożnik NW wolne', 'Pojemnik na pościel w sofie', 'Wieszak 80 cm (ok. 8 ubrań)'],
     cons: ['Po rozłożeniu przejście między sofą a słupem tylko ≈ 59 cm', 'Gniazdko G4 za sofą – przenieść przy wezgłowiu'],
-    guest: ['Ubrania: wieszak ścienny 105 cm nad komodą 105×40×85', 'Bagaże: pojemnik w sofie, na komodzie', 'Szafka nocna: komoda przy wezgłowiu'],
+    guest: ['Ubrania: wieszak ścienny 80 cm nad komodą 80×40×85', 'Bagaże: pojemnik w sofie, na komodzie', 'Szafka nocna: komoda przy wezgłowiu'],
     items: [
       ...sofaBed('sofa', 'Sofa 2-os. 170×95', { x: 0.0, y: 1.55, w: 0.95, d: 1.70, back: 'W' }, { x: 0.0, y: 1.55, w: 2.05, d: 1.70, back: 'W', head: 'W' }),
-      ...komodaRail(0.45, 1.05),
+      ...komodaRail(0.70, 0.80),
       ...workzone(),
     ],
   },
@@ -165,13 +167,13 @@ export const LAYOUTS = [
     id: 7, bedType: 'fixed',
     name: 'Łóżko stałe przy ścianie zachodniej, wezgłowie na północy',
     short: 'Łóżko 140×200 z pojemnikiem przy ścianie zachodniej, nogami do południowej ściany. Szafka nocna przy wezgłowiu, komoda z wieszakiem na ścianie zachodniej nad łóżkiem.',
-    pros: ['Przejście od drzwi do strefy biurka ≈ 0,8 m (przy szafce nocnej), poza tym ≈ 1,2 m', 'Zwykłe łóżko z dowolnym materacem', 'Wezgłowie bliżej okna – więcej światła rano', 'Wieszak 100 cm nad komodą (ok. 10 ubrań)'],
+    pros: ['Przejście od drzwi do strefy biurka ≈ 0,8 m (przy szafce nocnej), poza tym ≈ 1,2 m', 'Zwykłe łóżko z dowolnym materacem', 'Wezgłowie bliżej okna – więcej światła rano', 'Wieszak 75 cm nad komodą (ok. 7 ubrań)'],
     cons: ['Łóżko zajmuje 2,8 m² cały czas', 'Szafka nocna stoi w przejściu', 'Gniazdko G4 zostaje za łóżkiem – przenieść przy wezgłowiu'],
-    guest: ['Ubrania: wieszak ścienny 100 cm nad komodą 100×40×85 (ściana zachodnia)', 'Bagaże: pojemnik pod łóżkiem, komoda', 'Szafka nocna: 40×40×55 przy wezgłowiu (wschód, północny koniec)'],
+    guest: ['Ubrania: wieszak ścienny 75 cm nad komodą 75×40×85 (ściana zachodnia)', 'Bagaże: pojemnik pod łóżkiem, komoda', 'Szafka nocna: 40×40×55 przy wezgłowiu (wschód, północny koniec)'],
     items: [
       { id: 'bed', type: 'fixedbed', label: 'Łóżko 140×200 z pojemnikiem na pościel i bagaże', x: 0.0, y: 1.58, w: 1.40, d: 2.0, h: 0.50, head: 'N', color: C.bed },
       nightstand('ns', 1.42, 1.58),
-      ...komodaRail(0.45, 1.00),
+      ...komodaRail(0.70, 0.75),
       ...workzone(),
     ].map(i => i.id === 'c1' ? { ...i, x: 1.50, face: { x: 1.78, y: 0 } } : i),
   },
@@ -179,13 +181,13 @@ export const LAYOUTS = [
     id: 8, bedType: 'fixed',
     name: 'Łóżko stałe wzdłuż ściany południowej, wezgłowie na zachodzie',
     short: 'Łóżko 140×200 długim bokiem do ściany południowej, w dzień leżanka oparta o ścianę. Komoda z wieszakiem i szafka nocna przy ścianie zachodniej.',
-    pros: ['Leżanka z oparciem o ścianę – najwygodniejsza do czytania i odpoczynku', 'Pojemnik pod łóżkiem na pościel i bagaże', 'Środek pokoju, okno i narożnik NW wolne', 'Wieszak 105 cm nad komodą'],
+    pros: ['Leżanka z oparciem o ścianę – najwygodniejsza do czytania i odpoczynku', 'Pojemnik pod łóżkiem na pościel i bagaże', 'Środek pokoju, okno i narożnik NW wolne', 'Wieszak 100 cm nad komodą (ok. 10 ubrań)'],
     cons: ['Łóżko zajmuje 2,8 m² cały czas', 'Przejście między łóżkiem a słupem ≈ 64 cm', 'Dostęp do łóżka tylko z północy (druga strona to ściana)', 'Gniazdko G4 zostaje za łóżkiem – przenieść przy wezgłowiu'],
-    guest: ['Ubrania: wieszak ścienny 105 cm nad komodą 105×40×85 (ściana zachodnia)', 'Bagaże: pojemnik pod łóżkiem, komoda', 'Szafka nocna: 40×38×55 przy wezgłowiu (zachód)'],
+    guest: ['Ubrania: wieszak ścienny 100 cm nad komodą 100×40×85 (ściana zachodnia)', 'Bagaże: pojemnik pod łóżkiem, komoda', 'Szafka nocna: 40×38×55 przy wezgłowiu (zachód)'],
     items: [
       { id: 'bed', type: 'fixedbed', label: 'Łóżko 140×200 z pojemnikiem na pościel i bagaże', x: 0.0, y: 2.18, w: 2.0, d: 1.40, h: 0.50, head: 'W', color: C.bed },
       nightstand('ns', 0.0, 1.76, 0.40, 0.38),
-      ...komodaRail(0.50, 1.05),
+      ...komodaRail(0.70, 1.00),
       ...workzone(),
     ].map(i => i.id === 'c1' ? { ...i, x: 1.50, face: { x: 1.78, y: 0 } } : i),
   },
@@ -199,7 +201,7 @@ export const LAYOUTS = [
     items: [
       { id: 'bed', type: 'fixedbed', label: 'Łóżko 140×200 z pojemnikiem na pościel i bagaże', x: 0.0, y: 2.18, w: 2.0, d: 1.40, h: 0.50, head: 'E', color: C.bed },
       nightstand('ns', 2.03, 3.20, 0.38, 0.38),
-      ...komodaRail(0.50, 1.20),
+      ...komodaRail(0.70, 1.20),
       ...workzone(),
     ].map(i => i.id === 'c1' ? { ...i, x: 1.50, face: { x: 1.78, y: 0 } } : i),
   },
@@ -209,11 +211,11 @@ export const LAYOUTS = [
     short: 'Łóżko 140×200 wezgłowiem do ściany południowej, odsunięte od zachodniej ściany – dostęp z obu stron (wygodne dla pary). Szafka nocna przy wezgłowiu, komoda z wieszakiem na ścianie zachodniej.',
     pros: ['Dostęp do łóżka z obu stron – wygodne dla pary', 'Szafka nocna po zachodniej stronie wezgłowia', 'Przejście po wschodniej stronie ≈ 0,7 m'],
     cons: ['Łóżko zajmuje 2,8 m² cały czas', 'Wąskie przejście (50 cm) po zachodniej stronie łóżka', 'Mało miejsca na dodatki'],
-    guest: ['Ubrania: wieszak ścienny 105 cm nad komodą 105×40×85 (ściana zachodnia)', 'Bagaże: pojemnik pod łóżkiem, komoda', 'Szafka nocna: 38×40×55 po zachodniej stronie wezgłowia'],
+    guest: ['Ubrania: wieszak ścienny 80 cm nad komodą 80×40×85 (ściana zachodnia)', 'Bagaże: pojemnik pod łóżkiem, komoda', 'Szafka nocna: 38×40×55 po zachodniej stronie wezgłowia'],
     items: [
       { id: 'bed', type: 'fixedbed', label: 'Łóżko 140×200 z pojemnikiem na pościel i bagaże', x: 0.50, y: 1.58, w: 1.40, d: 2.0, h: 0.50, head: 'S', color: C.bed },
       nightstand('ns', 0.10, 3.18, 0.38, 0.40),
-      ...komodaRail(0.45, 1.05),
+      ...komodaRail(0.70, 0.80),
       ...workzone(),
     ].map(i => i.id === 'c1' ? { ...i, x: 1.50, face: { x: 1.78, y: 0 } } : i),
   },
@@ -221,53 +223,11 @@ export const LAYOUTS = [
   // ===== ŁÓŻKO SKŁADANE DO ŚCIANY 140×200 =====
   {
     id: 11, bedType: 'wall',
-    name: 'Łóżko składane pionowo przy ścianie południowej + komoda z wieszakiem',
-    short: 'Łóżko 140×200 chowane pionowo w ścianie południowej obok drzwi, szafka nocna przy wezgłowiu, komoda z wieszakiem na zachodniej ścianie. W dzień zachodnia połowa pokoju wolna.',
-    pros: ['Zwykły materac (do ok. 20–25 cm) i najwygodniejszy sen z opcji składanych', 'W dzień wolna prawie cała zachodnia połowa pokoju', 'Okno i narożnik NW wolne', 'Po wschodniej stronie rozłożonego łóżka ≈ 1,1 m wolnego'],
-    cons: ['Po rozłożeniu łóżko zajmuje całą zachodnią połowę pokoju', 'Mechanizm i szafa łóżka to większy koszt (zabudowa na wymiar)', 'Wieszak mieści ok. 7 ubrań (70 cm)'],
-    guest: ['Ubrania: wieszak ścienny 70 cm nad komodą 70×40×85 (ściana zachodnia)', 'Bagaże: komoda lub walizka na rozłożonym łóżku', 'Szafka nocna: 40×40×55 przy wezgłowiu (stała)'],
-    items: [
-      { id: 'wb', type: 'wallbed', orient: 'V', label: 'Łóżko składane pionowe 140×200', cabinet: { x: 0.05, y: 3.18, w: 1.55, d: 0.40, h: 2.45 }, panel: { x: 0.125, y: 1.18, w: 1.40, d: 2.0 }, color: C.white },
-      nightstand('ns', 1.60, 3.18),
-      ...komodaRail(0.40, 0.70),
-      ...workzone(),
-    ],
-  },
-  {
-    id: 12, bedType: 'wall',
-    name: 'Łóżko składane poziomo przy ścianie zachodniej, komoda z wieszakiem obok',
-    short: 'Łóżko 140×200 składane poziomo do zabudowy przy ścianie zachodniej, szafka nocna na końcu zabudowy. Komoda z wieszakiem na północ od łóżka.',
-    pros: ['Rozłożone łóżko zostawia ≈ 84 cm przejścia – może zostać rozłożone jako leżanka na dzień', 'Cała ściana zachodnia to jedna spójna zabudowa', 'Narożnik NW wolny, nic wysokiego przy oknie'],
-    cons: ['Zabudowa zajmuje 40 cm ściany zachodniej na stałe', 'Szafka nocna jest przy wezgłowiu (końcu łóżka), nie z boku', 'Wieszak tylko 65 cm (ok. 6–7 ubrań)', 'Gniazdko G4 w korpusie łóżka – wyprowadzić'],
-    guest: ['Ubrania: wieszak ścienny 65 cm nad komodą 65×40×85', 'Bagaże: komoda lub walizka na rozłożonym łóżku', 'Szafka nocna: 40×38×55 przy wezgłowiu w narożniku SW'],
-    items: [
-      { id: 'wb', type: 'wallbed', orient: 'H', label: 'Łóżko składane poziome 140×200', cabinet: { x: 0, y: 1.05, w: 0.40, d: 2.10, h: 1.95 }, panel: { x: 0.40, y: 1.10, w: 1.40, d: 2.0 }, color: C.white },
-      nightstand('ns', 0.0, 3.17, 0.40, 0.38),
-      ...komodaRail(0.35, 0.65),
-      ...workzone(),
-    ],
-  },
-  {
-    id: 13, bedType: 'wall',
-    name: 'Łóżko składane poziomo w południowej części ściany zachodniej',
-    short: 'Łóżko 140×200 składane poziomo przy południowej części ściany zachodniej, szafka nocna przy wezgłowiu na północy, komoda z wieszakiem nad nią.',
-    pros: ['Rozłożone łóżko zostawia ≈ 84 cm przejścia', 'Wezgłowie i szafka nocna bliżej okna', 'Cała zabudowa po jednej stronie – środek pokoju wolny'],
-    cons: ['Stopa łóżka przy ścianie południowej – brak miejsca na ławę', 'Wieszak tylko 60 cm (ok. 6 ubrań)', 'Gniazdko G4 w korpusie łóżka – wyprowadzić'],
-    guest: ['Ubrania: wieszak ścienny 60 cm nad komodą 60×40×85', 'Bagaże: komoda lub walizka na rozłożonym łóżku', 'Szafka nocna: 40×38×55 przy wezgłowiu (północ)'],
-    items: [
-      { id: 'wb', type: 'wallbed', orient: 'H', label: 'Łóżko składane poziome 140×200', cabinet: { x: 0, y: 1.45, w: 0.40, d: 2.10, h: 1.95 }, panel: { x: 0.40, y: 1.50, w: 1.40, d: 2.0 }, color: C.white },
-      nightstand('ns', 0.0, 1.05, 0.40, 0.38),
-      ...komodaRail(0.40, 0.60),
-      ...workzone(),
-    ],
-  },
-  {
-    id: 14, bedType: 'wall',
-    name: 'Łóżko składane pionowo + komoda z wieszakiem przy słupie',
-    short: 'Łóżko 140×200 chowane pionowo przy ścianie południowej; komoda z wieszakiem stoi przy słupie (wykorzystuje martwą ścianę), a zachodnia ściana pozostaje cała wolna.',
-    pros: ['Zachodnia ściana i narożnik NW całkiem wolne', 'Komoda i wieszak na ścianie słupa, która i tak jest „martwa”', 'Zwykły materac 20–25 cm', 'Przejście do strefy biurka po rozłożeniu ≈ 0,7 m'],
-    cons: ['Wieszak 75 cm przy słupie – ubrania wiszą w przejściu', 'Po rozłożeniu łóżko zajmuje całą zachodnią połowę pokoju', 'Koszt mechanizmu i zabudowy'],
-    guest: ['Ubrania: wieszak ścienny 75 cm nad komodą 75×40×85 przy słupie', 'Bagaże: komoda lub walizka na rozłożonym łóżku', 'Szafka nocna: 40×40×55 przy wezgłowiu'],
+    name: 'Łóżko składane pionowo przy ścianie południowej + komoda z wieszakiem przy słupie',
+    short: 'Łóżko 140×200 chowane pionowo w ścianie południowej obok drzwi, szafka nocna przy wezgłowiu, komoda z wieszakiem przy słupie. W dzień zachodnia połowa pokoju wolna, w narożniku NW monstera.',
+    pros: ['Zwykły materac (do ok. 20–25 cm) i najwygodniejszy sen z opcji składanych', 'W dzień wolna prawie cała zachodnia połowa pokoju', 'Okno i narożnik NW zajmuje tylko monstera – nic wysokiego przy oknie', 'Komoda i wieszak na ścianie słupa, która i tak jest „martwa”'],
+    cons: ['Po rozłożeniu łóżko zajmuje całą zachodnią połowę pokoju', 'Przejście do strefy biurka po rozłożeniu ≈ 0,7 m (między łóżkiem a komodą przy słupie)', 'Mechanizm i szafa łóżka to większy koszt (zabudowa na wymiar)', 'Wieszak mieści ok. 7 ubrań (75 cm) i wisi w przejściu'],
+    guest: ['Ubrania: wieszak ścienny 75 cm nad komodą 75×40×85 przy słupie', 'Bagaże: komoda lub walizka na rozłożonym łóżku', 'Szafka nocna: 40×40×55 przy wezgłowiu (stała)'],
     items: [
       { id: 'wb', type: 'wallbed', orient: 'V', label: 'Łóżko składane pionowe 140×200', cabinet: { x: 0.05, y: 3.18, w: 1.55, d: 0.40, h: 2.45 }, panel: { x: 0.125, y: 1.18, w: 1.40, d: 2.0 }, color: C.white },
       nightstand('ns', 1.60, 3.18),
@@ -276,17 +236,59 @@ export const LAYOUTS = [
     ],
   },
   {
-    id: 15, bedType: 'wall',
-    name: 'Łóżko składane pionowo + dwie komody z wieszakami (ściana W i słup)',
-    short: 'Łóżko 140×200 chowane pionowo przy ścianie południowej. Dwa wieszaki z komodami: jeden przy ścianie zachodniej, drugi przy słupie – więcej miejsca na ubrania gości na dłuższy pobyt.',
-    pros: ['Dwa wieszaki (70 + 75 cm) – ok. 14 ubrań', 'Brak wysokiej szafy – pokój jest jasny i lekki', 'W dzień wolna prawie cała zachodnia połowa pokoju'],
-    cons: ['Dwa zestawy mebli do kupienia i dopasowania', 'Po rozłożeniu łóżko zajmuje całą zachodnią połowę pokoju', 'Wieszak przy słupie wisi w przejściu'],
-    guest: ['Ubrania: dwa wieszaki ścienne (70 i 75 cm) nad komodami', 'Bagaże: komody lub walizka na rozłożonym łóżku', 'Szafka nocna: 40×40×55 przy wezgłowiu'],
+    id: 12, bedType: 'wall',
+    name: 'Łóżko składane poziomo przy ścianie zachodniej, komoda z wieszakiem obok',
+    short: 'Łóżko 140×200 składane poziomo do zabudowy przy ścianie zachodniej, szafka nocna na końcu zabudowy. Krótka komoda z wieszakiem na północ od łóżka, obok monstery.',
+    pros: ['Rozłożone łóżko zostawia ≈ 84 cm przejścia – może zostać rozłożone jako leżanka na dzień', 'Cała ściana zachodnia to jedna spójna zabudowa', 'Nic wysokiego przy oknie – tylko monstera'],
+    cons: ['Zabudowa zajmuje 40 cm ściany zachodniej na stałe', 'Szafka nocna jest przy wezgłowiu (końcu łóżka), nie z boku', 'Wieszak tylko 50 cm (ok. 5 ubrań); liście monstery mogą dotykać ubrań', 'Gniazdko G4 w korpusie łóżka – wyprowadzić'],
+    guest: ['Ubrania: wieszak ścienny 50 cm nad komodą 50×40×85', 'Bagaże: komoda lub walizka na rozłożonym łóżku', 'Szafka nocna: 40×38×55 przy wezgłowiu w narożniku SW'],
+    items: [
+      { id: 'wb', type: 'wallbed', orient: 'H', label: 'Łóżko składane poziome 140×200', cabinet: { x: 0, y: 1.05, w: 0.40, d: 2.10, h: 1.95 }, panel: { x: 0.40, y: 1.10, w: 1.40, d: 2.0 }, color: C.white },
+      nightstand('ns', 0.0, 3.17, 0.40, 0.38),
+      ...komodaRail(0.50, 0.50),
+      ...workzone().map(i => i.id === 'plant' ? plantItem(0.46, 0.28) : i),
+    ],
+  },
+  {
+    id: 13, bedType: 'wall',
+    name: 'Łóżko składane poziomo w południowej części ściany zachodniej',
+    short: 'Łóżko 140×200 składane poziomo przy południowej części ściany zachodniej, szafka nocna przy wezgłowiu na północy, krótka komoda z wieszakiem nad nią, obok monstery.',
+    pros: ['Rozłożone łóżko zostawia ≈ 84 cm przejścia', 'Wezgłowie i szafka nocna bliżej okna', 'Cała zabudowa po jednej stronie – środek pokoju wolny'],
+    cons: ['Stopa łóżka przy ścianie południowej – brak miejsca na ławę', 'Wieszak tylko 50 cm (ok. 5 ubrań); liście monstery mogą dotykać ubrań', 'Gniazdko G4 w korpusie łóżka – wyprowadzić'],
+    guest: ['Ubrania: wieszak ścienny 50 cm nad komodą 50×40×85', 'Bagaże: komoda lub walizka na rozłożonym łóżku', 'Szafka nocna: 40×38×55 przy wezgłowiu (północ)'],
+    items: [
+      { id: 'wb', type: 'wallbed', orient: 'H', label: 'Łóżko składane poziome 140×200', cabinet: { x: 0, y: 1.45, w: 0.40, d: 2.10, h: 1.95 }, panel: { x: 0.40, y: 1.50, w: 1.40, d: 2.0 }, color: C.white },
+      nightstand('ns', 0.0, 1.05, 0.40, 0.38),
+      ...komodaRail(0.50, 0.50),
+      ...workzone().map(i => i.id === 'plant' ? plantItem(0.46, 0.28) : i),
+    ],
+  },
+  {
+    id: 14, bedType: 'wall',
+    name: 'Łóżko składane pionowo + dwie komody z wieszakami (słup + ściana W)',
+    short: 'Łóżko 140×200 chowane pionowo przy ścianie południowej; główna komoda z wieszakiem 80 cm przy słupie i druga, krótka (40 cm), na ścianie zachodniej za monsterą.',
+    pros: ['Dwa wieszaki (80 + 40 cm) – ok. 12 ubrań', 'Komoda i wieszak na ścianie słupa, która i tak jest „martwa”', 'Zwykły materac 20–25 cm', 'Nic wysokiego przy oknie – tylko monstera'],
+    cons: ['Przejście do strefy biurka po rozłożeniu ≈ 0,65 m', 'Wieszak przy słupie wisi w przejściu', 'Po rozłożeniu łóżko zajmuje całą zachodnią połowę pokoju', 'Koszt mechanizmu i zabudowy'],
+    guest: ['Ubrania: wieszak 80 cm nad komodą 80×40×85 przy słupie + wieszak 40 cm nad komodą 40×40×85 na ścianie zachodniej', 'Bagaże: komody lub walizka na rozłożonym łóżku', 'Szafka nocna: 40×40×55 przy wezgłowiu'],
     items: [
       { id: 'wb', type: 'wallbed', orient: 'V', label: 'Łóżko składane pionowe 140×200', cabinet: { x: 0.05, y: 3.18, w: 1.55, d: 0.40, h: 2.45 }, panel: { x: 0.125, y: 1.18, w: 1.40, d: 2.0 }, color: C.white },
       nightstand('ns', 1.60, 3.18),
-      ...komodaRail(0.40, 0.70),
-      ...komodaRail(1.65, 0.75, 'E', '2'),
+      ...komodaRail(1.62, 0.80, 'E'),
+      ...komodaRail(0.70, 0.40, 'W', '2'),
+      ...workzone(),
+    ],
+  },
+  {
+    id: 15, bedType: 'wall',
+    name: 'Łóżko składane pionowo przesunięte na wschód + komoda z wieszakiem 1,2 m przy ścianie W',
+    short: 'Łóżko 140×200 chowane pionowo w szafie przesuniętej na wschód (x 0,5–2,05 m), dzięki czemu wzdłuż zachodniej ściany zostaje pas na komodę z wieszakiem 1,2 m. Monstera w narożniku NW.',
+    pros: ['Najdłuższy wieszak (120 cm, ok. 12 ubrań) z układów składanych', 'Brak wysokiej szafy – pokój jest jasny i lekki', 'Komoda stoi wzdłuż łóżka, daleko od okna i monstery'],
+    cons: ['Przejście do strefy biurka po rozłożeniu tylko ≈ 0,65 m (łóżko przesunięte w stronę słupa)', 'Szafa łóżka zajmuje 1,55 m ściany południowej od x = 0,5 m – włącznik W1 zostaje 15 cm od szafy', 'Koszt mechanizmu i zabudowy'],
+    guest: ['Ubrania: wieszak ścienny 120 cm nad komodą 120×40×85 przy ścianie zachodniej', 'Bagaże: komoda lub walizka na rozłożonym łóżku', 'Szafka nocna: 36×38×55 przy wezgłowiu (wschód)'],
+    items: [
+      { id: 'wb', type: 'wallbed', orient: 'V', label: 'Łóżko składane pionowe 140×200', cabinet: { x: 0.50, y: 3.18, w: 1.55, d: 0.40, h: 2.45 }, panel: { x: 0.575, y: 1.18, w: 1.40, d: 2.0 }, color: C.white },
+      nightstand('ns', 2.05, 3.20, 0.36, 0.38),
+      ...komodaRail(1.50, 1.20),
       ...workzone(),
     ],
   },
@@ -431,6 +433,7 @@ export function outletPoint(o) {
 
 export function outletStatus(layout, o) {
   const p = outletPoint(o);
+  for (const it of layout.items) if (it.type === 'plant' && Math.hypot(p.x - (it.x + it.w / 2), p.y - (it.y + it.d / 2)) < 0.40) return 'za doniczką monstery – odsuń roślinę, żeby użyć';
   for (const mode of ['day', 'night']) {
     for (const f of footprints(layout, mode)) {
       if (f.wall) continue;

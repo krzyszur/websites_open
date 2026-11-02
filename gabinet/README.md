@@ -13,6 +13,7 @@ A single-file interactive 3D planner for a small room (3.44 × 3.58 m, 2.83 m hi
 - **Day/night mode** with animated bed folding and a desk chair that tucks under the worktop.
 - Toggles for outlets/switch, dimensions, open door, wall cut-away; preset cameras; PNG export (when opened as a local file).
 - For each layout: free floor area (day/night), narrowest passage to the desk zone at night, binder capacity of the shelves, outlet accessibility, automatic collision check.
+- **A real houseplant in the model**: the owner’s monstera (pot Ø42 cm, ~1.2 m tall) stands in the NW corner as in the photos; furniture is arranged around it, hanging rails keep clear of its pot, and outlet G1 behind it is flagged.
 - **“Odrzucone” (Rejected) tab**: earlier versions 1–3 with the reason each was rejected.
 - **Downloads for architects**: [`plan-pokoju.pdf`](plan-pokoju.pdf) (floor plan 1:20 and four wall elevations 1:25, A3, 3 sheets, dimensions in mm, outlet table, ISO 7200-style title block) and [`plan-pokoju.dxf`](plan-pokoju.dxf) (AutoCAD 2010 DXF, millimetres, 1:1, layers, real DIMENSION entities). DWG is not produced (closed format); open the DXF in AutoCAD, BricsCAD, ArchiCAD, Revit (import), LibreCAD or FreeCAD, or convert with the free ODA File Converter. The plan shows the existing room only (no furniture, wall thickness not measured).
 
@@ -65,6 +66,7 @@ Jednoplikowy, interaktywny planer 3D małego pokoju (3,44 × 3,58 m, wysokość 
 - **Tryb dzień/noc** z animacją składania łóżka i wsuwanym pod blat krzesłem.
 - Przełączniki: gniazdka/włącznik, wymiary, otwarte drzwi, ukrywanie ścian; gotowe widoki kamery; zapis PNG (po otwarciu pliku lokalnie).
 - Dla każdego układu: wolna podłoga (dzień/noc), najwęższe przejście do strefy biurka w nocy, pojemność półek na segregatory, dostępność gniazdek, automatyczna kontrola kolizji.
+- **Prawdziwa roślina w modelu**: monstera właściciela (doniczka Ø42 cm, wys. ok. 1,2 m) stoi w narożniku NW jak na zdjęciach; meble ustawiono wokół niej, wieszaki nie wchodzą w doniczkę, a gniazdko G1 za nią jest oznaczone.
 - **Zakładka „Odrzucone”**: wcześniejsze wersje 1–3 z powodem odrzucenia.
 - **Pliki dla architektów**: [`plan-pokoju.pdf`](plan-pokoju.pdf) (rzut 1:20 i cztery widoki ścian 1:25, A3, 3 arkusze, wymiary w mm, tabela gniazdek, tabliczka w stylu ISO 7200) oraz [`plan-pokoju.dxf`](plan-pokoju.dxf) (DXF AutoCAD 2010, milimetry, skala 1:1, warstwy, wymiary jako obiekty DIMENSION). Plik DWG nie jest generowany (format zamknięty); DXF otworzysz w AutoCAD, BricsCAD, ArchiCAD, Revit (import), LibreCAD lub FreeCAD, albo skonwertujesz darmowym ODA File Converter. Plan przedstawia tylko stan istniejący (bez mebli, bez grubości ścian).
 

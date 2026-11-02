@@ -393,6 +393,56 @@ function fixedBedUnit(it, g) {
   }
 }
 
+
+function monsteraLeafGeometry(L) {
+  const w = L * 0.55;
+  const sh = new THREE.Shape();
+  sh.moveTo(0, 0.05 * L);
+  sh.bezierCurveTo(-0.35 * w, -0.12 * L, -1.05 * w, 0.05 * L, -0.95 * w, 0.45 * L);
+  sh.bezierCurveTo(-0.8 * w, 0.85 * L, -0.3 * w, 1.0 * L, 0, L);
+  sh.bezierCurveTo(0.3 * w, 1.0 * L, 0.8 * w, 0.85 * L, 0.95 * w, 0.45 * L);
+  sh.bezierCurveTo(1.05 * w, 0.05 * L, 0.35 * w, -0.12 * L, 0, 0.05 * L);
+  for (const side of [-1, 1]) for (let k = 0; k < 3; k++) {
+    const hole = new THREE.Path(); const cx = side * (0.50 - k * 0.03) * w, cy = (0.30 + 0.20 * k) * L;
+    hole.absellipse(cx, cy, 0.26 * w, 0.045 * L, 0, Math.PI * 2, false, side * 0.55);
+    sh.holes.push(hole);
+  }
+  return new THREE.ShapeGeometry(sh, 10);
+}
+
+function plantUnit(it, g) {
+  const cx = it.x + it.w / 2, cz = it.y + it.d / 2; const grp = new THREE.Group(); grp.position.set(cx, 0, cz); g.add(grp);
+  const cast = (o) => { o.castShadow = true; o.receiveShadow = true; return o; };
+  // doniczka (misa) + podstawek + ziemia
+  const prof = [[0.10, 0], [0.18, 0.02], [0.21, 0.12], [0.205, 0.24], [0.21, 0.30], [0.195, 0.32]].map(p => new THREE.Vector2(p[0], p[1]));
+  grp.add(cast(new THREE.Mesh(new THREE.LatheGeometry(prof, 36), new THREE.MeshStandardMaterial({ color: 0xe4dccd, roughness: 0.85, side: THREE.DoubleSide }))));
+  grp.add(cast(new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.15, 0.025, 30), mat(0xd8d2c6))));
+  const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.02, 30), mat(0x3a2a20)); soil.position.y = 0.30; grp.add(soil);
+  // tyczka kokosowa
+  const pole = cast(new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.95, 16), mat(0xb48a55))); pole.position.set(0.02, 0.30 + 0.475, -0.03); grp.add(pole);
+  for (let k = 0; k < 14; k++) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.044, 0.004, 6, 16), mat(0xe6dcc0)); ring.rotation.x = Math.PI / 2; ring.position.set(0.02, 0.36 + k * 0.065, -0.03); grp.add(ring); }
+  // liście: [kąt°, promień podstawy, wysokość, długość blaszki, odchylenie w dół°]
+  const leaves = [[200, 0.10, 1.00, 0.40, 25], [20, 0.12, 1.08, 0.38, 20], [100, 0.14, 0.80, 0.42, 38], [290, 0.14, 0.72, 0.40, 40], [150, 0.18, 0.60, 0.38, 48], [330, 0.16, 0.55, 0.40, 50], [60, 0.15, 0.48, 0.34, 55], [240, 0.18, 0.44, 0.36, 58]];
+  const stemMat = mat(0x3f7a3d), up = new THREE.Vector3(0, 1, 0);
+  const place = (ang, r0, h, L, droop, hx, hz, mh) => {
+    const a = ang * Math.PI / 180; const out = new THREE.Vector3(Math.cos(a), 0, Math.sin(a));
+    const base = new THREE.Vector3(out.x * r0, 0.32, out.z * r0), tip = new THREE.Vector3(out.x * (r0 + hx), h, out.z * (r0 + hz));
+    const d = tip.clone().sub(base), len = d.length();
+    const stem = cast(new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.012, len, 6), stemMat)); stem.position.copy(base).add(tip).multiplyScalar(0.5);
+    stem.quaternion.setFromUnitVectors(up, d.clone().normalize()); grp.add(stem);
+    const dr = droop * Math.PI / 180; const dir = out.clone().multiplyScalar(Math.cos(dr)).add(new THREE.Vector3(0, -Math.sin(dr), 0)).normalize();
+    const right = new THREE.Vector3().crossVectors(dir, up).normalize(); const nrm = new THREE.Vector3().crossVectors(right, dir).normalize();
+    const leaf = cast(new THREE.Mesh(monsteraLeafGeometry(L), new THREE.MeshStandardMaterial({ color: mh, roughness: 0.55, side: THREE.DoubleSide })));
+    leaf.matrixAutoUpdate = false; leaf.matrix.makeBasis(right, dir, nrm).setPosition(tip); grp.add(leaf);
+  };
+  leaves.forEach((l, i) => { const [ang, r0, h, L, droop] = l; const hx = 0.20 + (i % 3) * 0.06; place(ang, r0, h, L, droop, hx, hx, i % 4 === 1 ? 0x2f6a35 : 0x1d4a2a); });
+  // długi liść zwisający do podłogi (jak na zdjęciach)
+  const pts = [new THREE.Vector3(0.12, 0.32, 0.10), new THREE.Vector3(0.28, 0.40, 0.18), new THREE.Vector3(0.36, 0.26, 0.22), new THREE.Vector3(0.40, 0.10, 0.24)];
+  grp.add(cast(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.009, 6), stemMat)));
+  const hang = cast(new THREE.Mesh(monsteraLeafGeometry(0.30), new THREE.MeshStandardMaterial({ color: 0x1d4a2a, roughness: 0.55, side: THREE.DoubleSide })));
+  hang.position.set(0.40, 0.10, 0.24); hang.rotation.set(-Math.PI / 2 + 0.15, 0, 0.7); grp.add(hang);
+}
+
 function wallbedUnit(it, g) {
   const c = it.cabinet, p = it.panel; const col = 0xf4f2ed; const th = 0.025;
   // korpus
@@ -437,6 +487,7 @@ function buildLayout(layout) {
       case 'fixedbed': fixedBedUnit(it, g); break;
       case 'lshelf': lshelfUnit(it, g); break;
       case 'rail': railUnit(it, g); break;
+      case 'plant': plantUnit(it, g); break;
       case 'drawers': drawersUnit(it, g); break;
       case 'armchair': armchairUnit(it, g); break;
       case 'table': tableUnit(it, g); break;
@@ -541,7 +592,7 @@ function drawPlan(L) {
     <text x="${ox}" y="${oy - 8}" class="cap">okno (N)</text><text x="${ox}" y="${oy + D * S + 16}" class="cap">drzwi (S)</text></svg>`;
 }
 function shortName(f) {
-  if (f.kind === 'bed') return 'łóżko ' + cm(f.w) + '×' + cm(f.d); const t = f.ref.type; if (f.kind === 'zone') return ''; if (t === 'box') return f.ref.wardrobe ? 'szafa' : f.ref.bedside ? 'nocna' : f.ref.underDesk ? '' : (/^Komoda/.test(f.ref.label) ? 'komoda' : 'ława'); return { wallbed: 'szafa', desk: 'biurko', chair: '', armchair: 'fotel', sofa: 'sofa', sofabed: 'łóżko', tower: 'regał', box: 'komoda', table: '', fixedbed: 'łóżko 140×200', printer: '', drawers: '', rail: '' }[t] ?? '';
+  if (f.kind === 'bed') return 'łóżko ' + cm(f.w) + '×' + cm(f.d); const t = f.ref.type; if (f.kind === 'zone') return ''; if (t === 'box') return f.ref.wardrobe ? 'szafa' : f.ref.bedside ? 'nocna' : f.ref.underDesk ? '' : (/^Komoda/.test(f.ref.label) ? 'komoda' : 'ława'); return { wallbed: 'szafa', desk: 'biurko', chair: '', armchair: 'fotel', sofa: 'sofa', sofabed: 'łóżko', tower: 'regał', box: 'komoda', table: '', fixedbed: 'łóżko 140×200', printer: '', drawers: '', rail: '', plant: 'monstera' }[t] ?? '';
 }
 
 // zakładki
