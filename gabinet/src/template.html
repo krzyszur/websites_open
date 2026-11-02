@@ -46,7 +46,7 @@ circle.socket{fill:#2f7ee6;stroke:#fff}circle.switch{fill:#ffb347;stroke:#fff}
 #outlets{list-style:none;padding:0;font-size:13px}#outlets li{padding:3px 0}#outlets li.ok b{color:var(--ok)}#outlets li.warn b{color:var(--warn)}
 .err{background:#fde8e8;border:1px solid #f5b5b5;color:#9b1c1c;border-radius:8px;padding:8px;margin:8px 0;font-size:13px}
 .grp2 select{width:100%;max-width:100%}.grp2{display:flex;gap:6px;align-items:center;margin:8px 0 2px;flex-wrap:wrap}.grp2 button.on{background:#1d2127;color:#fff;border-color:#1d2127}.rej{background:#fff4e5;border:1px solid #f0c27b;color:#7a4a00;border-radius:8px;padding:8px 10px;margin:6px 0;font-size:12.5px}
-.note{font-size:12px;color:var(--mut);margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
+.dl a{font-weight:600;color:var(--acc)}.note{font-size:12px;color:var(--mut);margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
 .olabel{font:600 10px system-ui;background:#2f7ee6;color:#fff;border-radius:9px;padding:1px 6px;box-shadow:0 1px 2px rgba(0,0,0,.3)}
 .olabel.switch{background:#e08a14}
 .dlabel{font:600 11px system-ui;background:#fff;color:#d1411f;border:1px solid #d1411f;border-radius:6px;padding:0 5px}
@@ -82,7 +82,13 @@ circle.socket{fill:#2f7ee6;stroke:#fff}circle.switch{fill:#ffb347;stroke:#fff}
     <h3>Meble i wymiary (cm)</h3>
     <table><thead><tr><th>Element</th><th>szer.×gł.</th><th>wys.</th></tr></thead><tbody id="furn"></tbody></table>
     <h3>Gniazdka i włącznik w tym układzie</h3><ul id="outlets"></ul>
-    <div class="note"><b>Skąd dane:</b> wymiary ze szkicu z pomiarem; przejścia liczone konserwatywnie (strefa kwadratowa wokół osoby); skan Polycam zgodny ze szkicem do ok. 2 cm (3,46 × 3,60 m); okno, parapet, grzejnik i drzwi ze skanu i zdjęć IMG_0121–0139. <b>Okno nad biurkiem:</b> w wariancie „biurko ze sklepu” blat we wnęce zaczyna się dokładnie na krawędzi wnęki okna (nie wchodzi pod okno), a pod samym oknem stoi biurko (parapet 50 cm, blat 74 cm) – skrzydło nad nim da się uchylić, pełne otwarcie wymaga zdjęcia rzeczy z blatu; grzejnik zostaje pod blatem (zostaw ≥30 cm wolnej przestrzeni nad nim). <b>Pozycje gniazdek i włącznika są orientacyjne (±30 cm)</b> – przed zamówieniem mebli na wymiar zmierz je miarką. Przejścia liczone dla swobodnej strefy o szerokości podanej w kafelku; „segregatory” to szacunek (8 cm/segregator).</div>
+    <h3>Plan pokoju do pobrania (dla architektów)</h3>
+    <ul class="dl">
+      <li><a href="plan-pokoju.pdf" download>plan-pokoju.pdf</a> – rzut 1:20 i widoki ścian 1:25, A3, 3 arkusze, wymiary w mm, tabela gniazdek</li>
+      <li><a href="plan-pokoju.dxf" download>plan-pokoju.dxf</a> – DXF (AutoCAD 2010), mm, skala 1:1, warstwy i wymiary jako obiekty DIMENSION</li>
+    </ul>
+    <div class="sub" style="margin-top:6px">Plik DWG nie jest generowany (format zamknięty). DXF otworzą m.in. AutoCAD, BricsCAD, ArchiCAD, Revit (import), LibreCAD i FreeCAD; do DWG można użyć darmowego ODA File Converter. Plan przedstawia stan istniejący (bez grubości ścian) – nie zawiera mebli z układów.</div>
+    <div class="note"><b>Skąd dane:</b> wymiary ze szkicu z pomiarem; przejścia liczone konserwatywnie (strefa kwadratowa wokół osoby); skan Polycam zgodny ze szkicem do ok. 2 cm (3,46 × 3,60 m); okno, parapet, grzejnik i drzwi ze skanu i zdjęć IMG_0121–0139. <b>Okno nad biurkiem:</b> w wariancie „biurko ze sklepu” blat we wnęce zaczyna się dokładnie na krawędzi wnęki okna (nie wchodzi pod okno), a pod samym oknem stoi biurko (parapet 50 cm, blat 74 cm) – skrzydło nad nim da się uchylić, pełne otwarcie wymaga zdjęcia rzeczy z blatu; grzejnik zostaje pod blatem (zostaw ≥30 cm wolnej przestrzeni nad nim). <b>Pozycje gniazdek i włącznika (85×85 mm) pochodzą z pomiaru właściciela</b> (rysunek v2: odległość od ściany do krawędzi i wysokość dolnej krawędzi); wysokość G3 przyjęto jak G1/G2. Rozbieżności pomiarów (do 13 mm) opisano w uwagach planu PDF. Przejścia liczone dla swobodnej strefy o szerokości podanej w kafelku; „segregatory” to szacunek (8 cm/segregator).</div>
   </aside>
 </div>
 <script>/*BUNDLE*/</script>

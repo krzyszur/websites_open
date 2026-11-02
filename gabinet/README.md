@@ -14,11 +14,13 @@ A single-file interactive 3D planner for a small room (3.44 × 3.58 m, 2.83 m hi
 - Toggles for outlets/switch, dimensions, open door, wall cut-away; preset cameras; PNG export (when opened as a local file).
 - For each layout: free floor area (day/night), narrowest passage to the desk zone at night, binder capacity of the shelves, outlet accessibility, automatic collision check.
 - **“Odrzucone” (Rejected) tab**: earlier versions 1–3 with the reason each was rejected.
+- **Downloads for architects**: [`plan-pokoju.pdf`](plan-pokoju.pdf) (floor plan 1:20 and four wall elevations 1:25, A3, 3 sheets, dimensions in mm, outlet table, ISO 7200-style title block) and [`plan-pokoju.dxf`](plan-pokoju.dxf) (AutoCAD 2010 DXF, millimetres, 1:1, layers, real DIMENSION entities). DWG is not produced (closed format); open the DXF in AutoCAD, BricsCAD, ArchiCAD, Revit (import), LibreCAD or FreeCAD, or convert with the free ODA File Converter. The plan shows the existing room only (no furniture, wall thickness not measured).
 
 ### How it was made
 1. **Inputs** (provided by the room’s owner): a hand-drawn, dimensioned floor-plan sketch (PDF), a LiDAR scan from the Polycam app (GLB, ~11.6 MB), a KIRI Engine scan (USDZ, not used) and 18 iPhone photos (HEIC).
 2. **Data check.** The GLB was loaded with `trimesh`; horizontal slices at several heights were plotted with Matplotlib and compared with the sketch. Width 3.46 m vs 3.44 m and depth 3.60 m vs 3.58 m – i.e. agreement within ~2 cm – so the sketch dimensions were adopted.
 3. **Reading the details.** The textured scan was rendered as orthographic wall elevations with three.js in headless Chromium (Playwright); window, sill (0.50 m), radiator, door and outlet positions were measured from those images and cross-checked against the photos (converted from HEIC with Pillow + pillow-heif).
+3b. **Outlets.** The first estimate of outlet positions came from the scan and photos (±30 cm). It was later replaced by the owner’s own tape measurements (updated drawing “v2”): 85 × 85 mm elements, distance from the nearest wall to the near edge, and height of the lower edge. The height of G3 was not written explicitly and is assumed equal to G1/G2 (260 mm).
 4. **Model.** The room is built parametrically from the sketch (walls with openings, pillar, window, radiator, door leaf, lamp). Furniture is a list of items with plan coordinates and heights.
 5. **Validator** (`src/layouts.js`, runs in Node and in the page): footprints for day/night states, collisions, door-swing zone, shelf clearances, free floor on a 5 cm grid, narrowest passage via grid path search with a square clearance (conservative), binder capacity estimate (8 cm per binder).
 6. **UI** (`src/main.js`): three.js r160 (OrbitControls, CSS2DRenderer), procedural oak floor texture, auto-hiding walls, animated wall bed and sofa bed. Everything is bundled with esbuild into one HTML file (~570 KB, no external requests).
@@ -26,11 +28,12 @@ A single-file interactive 3D planner for a small room (3.44 × 3.58 m, 2.83 m hi
 8. **Testing.** After each change: layout validation in Node, automated screenshots of all layouts (day and night, top and perspective views) in headless Chromium, console-error check.
 
 ### Tools
-Claude Sonnet 5.5 in Claude Code (design, code, analysis) · three.js 0.160 · esbuild · Node.js · Python 3 (Pillow, pillow-heif, trimesh, NumPy, Matplotlib) · poppler (`pdftoppm`) · Playwright + Chromium · Polycam and iPhone (scan and photos).
+Claude Sonnet 5.5 in Claude Code (design, code, analysis) · three.js 0.160 · esbuild · Node.js · Python 3 (Pillow, pillow-heif, trimesh, NumPy, Matplotlib, **ezdxf** for the DXF) · poppler (`pdftoppm`) · Playwright + Chromium · Polycam and iPhone (scan and photos).
 
 ### Limitations (please read)
 - Room dimensions come from the owner’s measurement and are confirmed by the scan to ~2 cm.
-- **Outlet and switch positions are approximate (±30 cm)** – read from a blurry textured mesh and from photos. Measure them before ordering custom furniture.
+- Outlet and switch positions come from the owner’s tape measurements; **G3’s height is assumed (260 mm) – confirm on site**. Window sill and head, window-recess depth, radiator and door height come from the LiDAR scan only (dashed grey on the plan) – verify before design work.
+- Measurement discrepancies: the east-wall segments add up to 3591 mm vs 3578 mm on the west wall (13 mm); the north-wall parts add up to 3438 mm vs 3440 mm on the south wall (2 mm). The plan adopts 3578 / 3440 and says so in its notes.
 - Sofa-bed dimensions (e.g. ~205 cm deep when unfolded) are typical values; check the data sheet of the actual model.
 - Passage widths use a conservative square clearance and a 60 cm person envelope; real passages are usually a bit wider.
 - This is an idea-comparison tool, not construction documentation. No structural advice is given.
@@ -44,6 +47,9 @@ cd src
 npm install        # three@0.160.0 and esbuild
 node check2.mjs    # validate all layouts (optional)
 node build.mjs     # writes index.html
+
+# CAD/PDF plan (needs: pip install ezdxf matplotlib)
+python3 tools/make_plan.py ..   # writes plan-pokoju.pdf and plan-pokoju.dxf to the project folder
 ```
 
 ---
@@ -60,11 +66,13 @@ Jednoplikowy, interaktywny planer 3D małego pokoju (3,44 × 3,58 m, wysokość 
 - Przełączniki: gniazdka/włącznik, wymiary, otwarte drzwi, ukrywanie ścian; gotowe widoki kamery; zapis PNG (po otwarciu pliku lokalnie).
 - Dla każdego układu: wolna podłoga (dzień/noc), najwęższe przejście do strefy biurka w nocy, pojemność półek na segregatory, dostępność gniazdek, automatyczna kontrola kolizji.
 - **Zakładka „Odrzucone”**: wcześniejsze wersje 1–3 z powodem odrzucenia.
+- **Pliki dla architektów**: [`plan-pokoju.pdf`](plan-pokoju.pdf) (rzut 1:20 i cztery widoki ścian 1:25, A3, 3 arkusze, wymiary w mm, tabela gniazdek, tabliczka w stylu ISO 7200) oraz [`plan-pokoju.dxf`](plan-pokoju.dxf) (DXF AutoCAD 2010, milimetry, skala 1:1, warstwy, wymiary jako obiekty DIMENSION). Plik DWG nie jest generowany (format zamknięty); DXF otworzysz w AutoCAD, BricsCAD, ArchiCAD, Revit (import), LibreCAD lub FreeCAD, albo skonwertujesz darmowym ODA File Converter. Plan przedstawia tylko stan istniejący (bez mebli, bez grubości ścian).
 
 ### Jak powstała
 1. **Dane wejściowe** (od właściciela pokoju): odręczny szkic rzutu z wymiarami (PDF), skan LiDAR z aplikacji Polycam (GLB, ok. 11,6 MB), skan z KIRI Engine (USDZ, niewykorzystany) i 18 zdjęć z iPhone’a (HEIC).
 2. **Kontrola danych.** GLB wczytałem w `trimesh`, przekroje poziome na kilku wysokościach narysowałem w Matplotlib i porównałem ze szkicem. Szerokość 3,46 m vs 3,44 m i głębokość 3,60 m vs 3,58 m – zgodność do ok. 2 cm, więc przyjąłem wymiary ze szkicu.
 3. **Odczyt szczegółów.** Teksturowany skan wyrenderowałem jako rzuty ortogonalne ścian w three.js w bezgłowej przeglądarce (Playwright); położenie okna, parapetu (0,50 m), grzejnika, drzwi i gniazdek zmierzyłem na tych obrazach i skontrolowałem ze zdjęciami (HEIC → JPG przez Pillow + pillow-heif).
+3b. **Gniazdka.** Pierwsze oszacowanie położenia gniazdek pochodziło ze skanu i zdjęć (±30 cm). Zastąpiłem je pomiarami taśmą z uaktualnionego rysunku właściciela („v2”): elementy 85 × 85 mm, odległość od najbliższej ściany do krawędzi i wysokość dolnej krawędzi. Wysokość G3 nie była zapisana wprost i przyjęto ją jak G1/G2 (260 mm).
 4. **Model.** Pokój jest budowany parametrycznie ze szkicu (ściany z otworami, słup, okno, grzejnik, skrzydło drzwi, lampa). Meble to lista elementów ze współrzędnymi w planie i wysokościami.
 5. **Walidator** (`src/layouts.js`, działa w Node i na stronie): rzuty mebli dla stanu dzień/noc, kolizje, strefa otwierania drzwi, odstępy półek, wolna podłoga na siatce 5 cm, najwęższe przejście (wyszukiwanie ścieżki na siatce z kwadratowym marginesem – zachowawczo), szacunek pojemności na segregatory (8 cm na segregator).
 6. **Interfejs** (`src/main.js`): three.js r160 (OrbitControls, CSS2DRenderer), proceduralna tekstura dębowej podłogi, automatyczne ukrywanie ścian, animowane łóżko składane i sofa. Całość spakowana esbuildem do jednego pliku HTML (ok. 570 KB, bez zewnętrznych zapytań).
@@ -72,11 +80,12 @@ Jednoplikowy, interaktywny planer 3D małego pokoju (3,44 × 3,58 m, wysokość 
 8. **Testy.** Po każdej zmianie: walidacja układów w Node, automatyczne zrzuty ekranu wszystkich układów (dzień i noc, widok z góry i perspektywa) w bezgłowym Chromium, kontrola błędów konsoli.
 
 ### Narzędzia
-Claude Sonnet 5.5 w Claude Code (projekt, kod, analiza) · three.js 0.160 · esbuild · Node.js · Python 3 (Pillow, pillow-heif, trimesh, NumPy, Matplotlib) · poppler (`pdftoppm`) · Playwright + Chromium · Polycam i iPhone (skan i zdjęcia).
+Claude Sonnet 5.5 w Claude Code (projekt, kod, analiza) · three.js 0.160 · esbuild · Node.js · Python 3 (Pillow, pillow-heif, trimesh, NumPy, Matplotlib, **ezdxf** do DXF) · poppler (`pdftoppm`) · Playwright + Chromium · Polycam i iPhone (skan i zdjęcia).
 
 ### Ograniczenia (warto przeczytać)
 - Wymiary pokoju pochodzą z pomiaru właściciela i są potwierdzone skanem do ok. 2 cm.
-- **Położenie gniazdek i włącznika jest orientacyjne (±30 cm)** – odczytane z nieostrej, teksturowanej siatki i ze zdjęć. Zmierz je przed zamówieniem mebli na wymiar.
+- Położenie gniazdek i włącznika pochodzi z pomiarów taśmą właściciela; **wysokość G3 jest przyjęta (260 mm) – potwierdź na miejscu**. Parapet, nadproże i głębokość wnęki okna, grzejnik i wysokość drzwi pochodzą wyłącznie ze skanu LiDAR (szara linia przerywana na planie) – zweryfikuj przed projektowaniem.
+- Rozbieżności pomiarów: odcinki ściany wschodniej sumują się do 3591 mm wobec 3578 mm na ścianie zachodniej (13 mm); części ściany północnej do 3438 mm wobec 3440 mm na południowej (2 mm). Plan przyjmuje 3578 / 3440 i podaje to w uwagach.
 - Wymiary sof (np. ok. 205 cm głębokości po rozłożeniu) to wartości typowe; sprawdź kartę produktu konkretnego modelu.
 - Przejścia liczone są zachowawczo (kwadratowy margines, obwiednia osoby 60 cm); w rzeczywistości zwykle są nieco szersze.
 - To narzędzie do porównywania pomysłów, nie dokumentacja wykonawcza. Strona nie zawiera porad konstrukcyjnych.
@@ -90,4 +99,7 @@ cd src
 npm install        # three@0.160.0 i esbuild
 node check2.mjs    # walidacja wszystkich układów (opcjonalnie)
 node build.mjs     # zapisuje index.html
+
+# plan CAD/PDF (wymaga: pip install ezdxf matplotlib)
+python3 tools/make_plan.py ..   # zapisuje plan-pokoju.pdf i plan-pokoju.dxf w katalogu projektu
 ```

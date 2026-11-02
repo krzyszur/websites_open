@@ -12,11 +12,13 @@ export const ROOM = {
 
 // Gniazdka i włącznik (z zdjęć i skanu; dokładność ok. ±0,3 m — do potwierdzenia miarką)
 export const OUTLETS = [
-  { id: 'G1', kind: 'socket', wall: 'N', pos: 0.30, h: 0.30, label: 'Gniazdko G1 – ściana N, 0,30 m od narożnika NW' },
-  { id: 'G2', kind: 'socket', wall: 'N', pos: 3.15, h: 0.30, label: 'Gniazdko G2 – ściana N, 0,29 m od narożnika NE' },
-  { id: 'G3', kind: 'socket', wall: 'E', pos: 0.43, h: 0.32, label: 'Gniazdko G3 – ściana E, 0,43 m od narożnika NE' },
-  { id: 'G4', kind: 'socket', wall: 'W', pos: 2.58, h: 0.33, label: 'Gniazdko G4 – ściana W, 1,0 m od narożnika SW' },
-  { id: 'W1', kind: 'switch', wall: 'S', pos: 2.22, h: 1.30, label: 'Włącznik światła – ściana S, 0,2 m od drzwi' },
+  // pos = środek elementu wzdłuż ściany [m, we współrzędnych modelu]; h = wysokość środka [m]; bottom = dolna krawędź [m]; a = odległość od najbliższej ściany do krawędzi [m]
+  // Źródło: rysunek z uaktualnionymi wymiarami (v2). Elementy 85×85 mm. G3: wysokość 0,26 m przyjęta z opisu przy narożniku NE (do potwierdzenia).
+  { id: 'G1', kind: 'socket', wall: 'N', pos: 0.3665, bottom: 0.260, h: 0.3025, a: 0.324, size: 0.085, label: 'Gniazdko G1 – ściana N, 324 mm od ściany zachodniej, dolna krawędź na 260 mm' },
+  { id: 'G2', kind: 'socket', wall: 'N', pos: 3.2355, bottom: 0.260, h: 0.3025, a: 0.162, size: 0.085, label: 'Gniazdko G2 – ściana N, 162 mm od ściany wschodniej, dolna krawędź na 260 mm' },
+  { id: 'G3', kind: 'socket', wall: 'E', pos: 0.3905, bottom: 0.260, h: 0.3025, a: 0.348, size: 0.085, label: 'Gniazdko G3 – ściana E, 348 mm od ściany północnej, dolna krawędź na 260 mm (zał.)' },
+  { id: 'G4', kind: 'socket', wall: 'W', pos: 2.5975, bottom: 0.263, h: 0.3055, a: 0.940, size: 0.085, label: 'Gniazdko G4 – ściana W, 940 mm od ściany południowej, dolna krawędź na 263 mm' },
+  { id: 'W1', kind: 'switch', wall: 'S', pos: 2.2425, bottom: 1.250, h: 1.2925, a: 2.200, size: 0.085, label: 'Włącznik W1 – ściana S, 2200 mm od ściany zachodniej, dolna krawędź na 1250 mm' },
 ];
 
 const C = { oak: 0xc9a06a, white: 0xf1efe9, graphite: 0x4a4d52, wood: 0xb98a55, fabric: 0x8a9a8b, fabric2: 0x7d8fa3, bed: 0xe9e4da, steel: 0x9aa0a6, sofa: 0x6f7480 };

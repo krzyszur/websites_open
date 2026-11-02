@@ -154,7 +154,7 @@ function outletWorld(o) {
 }
 for (const o of OUTLETS) {
   const w = outletWorld(o); const g = new THREE.Group(); g.position.copy(w.p); g.rotation.y = w.r;
-  box(0.09, 0.09, 0.016, o.kind === 'switch' ? 0xffb347 : 0x2f7ee6, 0, 0, 0.008, g, { noEdge: true, noShadow: true });
+  box(o.size || 0.085, o.size || 0.085, 0.016, o.kind === 'switch' ? 0xffb347 : 0x2f7ee6, 0, 0, 0.008, g, { noEdge: true, noShadow: true });
   outletG.add(g);
   const el = document.createElement('div'); el.className = 'olabel ' + o.kind; el.textContent = o.id;
   const lab = new CSS2DObject(el); lab.position.set(w.p.x + w.n[0] * 0.12, w.p.y + 0.13, w.p.z + w.n[2] * 0.12); outletG.add(lab); outletLabels.push(lab);
