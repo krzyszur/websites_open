@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>websites_open – projekty / projects</title>
+<meta name="description" content="Publiczne strony i narzędzia tworzone z pomocą Claude. / Public pages and tools built with the help of Claude.">
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--ink:#1d2127;--mut:#6b7280;--acc:#2f6fed;--line:#e3e6ea}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+header{max-width:960px;margin:0 auto;padding:28px 20px 8px;display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+h1{margin:0;font-size:24px}
+.sub{color:var(--mut);margin:4px 0 0;max-width:640px}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.lang button{border:0;background:#fff;padding:6px 14px;font:inherit;cursor:pointer}
+.lang button.on{background:var(--acc);color:#fff}
+main{max-width:960px;margin:0 auto;padding:12px 20px 40px;display:grid;gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.card h2{margin:0 0 2px;font-size:19px}
+.meta{color:var(--mut);font-size:13px;margin-bottom:10px}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.tags span{background:#eef2fb;color:#244a9c;border-radius:20px;padding:2px 10px;font-size:12.5px}
+h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:16px 0 4px}
+ul{margin:4px 0;padding-left:20px}
+.open{display:inline-block;margin-top:10px;background:var(--acc);color:#fff;text-decoration:none;padding:8px 16px;border-radius:9px;font-weight:600}
+.open.sec{background:#fff;color:var(--acc);border:1px solid var(--acc);margin-left:6px}
+.note{font-size:13px;color:var(--mut);border-top:1px solid var(--line);margin-top:14px;padding-top:10px}
+footer{max-width:960px;margin:0 auto;padding:0 20px 40px;color:var(--mut);font-size:13px}
+/* przełączanie języka / language switch */
+body[data-lang="pl"] [lang="en"]{display:none}
+body[data-lang="en"] [lang="pl"]{display:none}
+</style>
+</head>
+<body data-lang="pl">
+<header>
+  <div>
+    <h1>websites_open</h1>
+    <p class="sub" lang="pl">Publiczne strony i narzędzia, które powstają z pomocą Claude (Anthropic). Przy każdym projekcie opisuję, jak powstał i z jakich narzędzi korzystałem.</p>
+    <p class="sub" lang="en">Public pages and tools built with the help of Claude (Anthropic). Each project explains how it was made and which tools were used.</p>
+  </div>
+  <div class="lang" role="group" aria-label="Language / Język">
+    <button class="on" data-set="pl">PL</button><button data-set="en">EN</button>
+  </div>
+</header>
+
+<main>
+  <article class="card" id="gabinet">
+    <h2 lang="pl">Gabinet – planer pokoju 3D (biuro + gościnna sypialnia)</h2>
+    <h2 lang="en">Study &amp; guest room – 3D room layout planner</h2>
+    <div class="meta" lang="pl">Listopad 2026 · jeden plik HTML · działa offline · bez śledzenia</div>
+    <div class="meta" lang="en">November 2026 · single HTML file · works offline · no tracking</div>
+
+    <p lang="pl">Interaktywny model 3D małego pokoju (3,44 × 3,58 m, wysokość 2,83 m), który ma być jednocześnie gabinetem do pracy i rysowania oraz pokojem gościnnym. Strona porównuje <b>15 układów</b> – po 5 dla każdego rodzaju łóżka (stałe, składane do ściany, rozkładana sofa) – w dwóch wariantach biurka. Model można obracać, przełączać tryb dzień/noc (łóżko złożone/rozłożone), włączać gniazdka i wymiary. Dla każdego układu liczona jest wolna podłoga, najwęższe przejście i pojemność półek, a kolizje mebli są sprawdzane automatycznie. Odrzucone wersje projektu są dostępne w zakładce „Odrzucone”.</p>
+    <p lang="en">An interactive 3D model of a small room (3.44 × 3.58 m, 2.83 m high) that has to work both as a home study for desk work and drawing and as a guest bedroom. The page compares <b>15 layouts</b> – five for each bed type (fixed bed, wall-folding bed, sofa bed) – with two desk variants. You can orbit the model, switch day/night mode (bed folded/unfolded), toggle outlets and dimensions. For every layout the page computes free floor area, narrowest passage and shelf capacity, and checks furniture collisions automatically. Rejected design versions are kept in the “Odrzucone” (Rejected) tab.</p>
+
+    <div class="tags"><span>three.js</span><span>WebGL</span><span>LiDAR scan</span><span>space planning</span><span>no dependencies at runtime</span></div>
+
+    <h3 lang="pl">Jak powstała</h3>
+    <h3 lang="en">How it was made</h3>
+    <ul lang="pl">
+      <li>Dane wejściowe: odręczny szkic pokoju z wymiarami (PDF), skan LiDAR z aplikacji Polycam (GLB), 18 zdjęć z iPhone’a.</li>
+      <li>Porównałem skan ze szkicem (przekroje siatki na różnych wysokościach) – zgodność do ok. 2 cm. Z renderów ścian modelu i ze zdjęć odczytałem okno, parapet, grzejnik, drzwi i orientacyjne położenie gniazdek.</li>
+      <li>Zbudowałem parametryczny model pokoju oraz model danych układów (meble jako prostokąty z wysokościami) i walidator: kolizje, strefy otwierania drzwi, siatkowe wyznaczanie przejść i wolnej podłogi.</li>
+      <li>Widok 3D, interfejs i animacje (składanie łóżka, wsuwane krzesło) napisałem w three.js i spakowałem do jednego pliku HTML.</li>
+      <li>Projekt powstawał iteracyjnie, w rozmowie z właścicielem pokoju: 4 wersje, każda zmiana wymagań (biurko L, łóżko 140, szafa, sofa jak na zdjęciu, blat zlicowany) kończyła się nową wersją; poprzednie są w archiwum.</li>
+      <li>Testy: automatyczne zrzuty ekranu w bezgłowej przeglądarce i kontrola błędów konsoli po każdej zmianie.</li>
+    </ul>
+    <ul lang="en">
+      <li>Inputs: a hand-drawn dimensioned sketch of the room (PDF), a LiDAR scan from the Polycam app (GLB), and 18 iPhone photos.</li>
+      <li>I compared the scan with the sketch (mesh slices at several heights) – they agree to about 2 cm. From rendered wall elevations of the model and from the photos I read off the window, sill, radiator, door and approximate outlet positions.</li>
+      <li>I built a parametric room model, a layout data model (furniture as rectangles with heights) and a validator: collisions, door-swing zones, grid-based passage width and free floor area.</li>
+      <li>The 3D view, UI and animations (folding bed, tucked-in chair) are written in three.js and bundled into a single HTML file.</li>
+      <li>The design evolved iteratively with the room’s owner: 4 versions, each change of requirements (L-shaped desk, 140 cm bed, wardrobe, sofa bed as in the reference photo, flush worktops) produced a new version; earlier ones are archived.</li>
+      <li>Testing: automated screenshots in a headless browser and console-error checks after every change.</li>
+    </ul>
+
+    <h3 lang="pl">Użyte narzędzia</h3>
+    <h3 lang="en">Tools used</h3>
+    <ul>
+      <li><b>Claude</b> (Anthropic, Claude Sonnet 5.5) in <b>Claude Code</b> – <span lang="pl">projekt, kod, analiza danych, testy</span><span lang="en">design, code, data analysis, testing</span></li>
+      <li><b>three.js 0.160</b> (WebGL, OrbitControls, CSS2DRenderer) + <b>esbuild</b> – <span lang="pl">widok 3D i pakowanie do jednego pliku</span><span lang="en">3D view and single-file bundling</span></li>
+      <li><b>Node.js</b> – <span lang="pl">walidator układów</span><span lang="en">layout validator</span></li>
+      <li><b>Python</b> (Pillow, pillow-heif, trimesh, NumPy, Matplotlib) + poppler – <span lang="pl">konwersja zdjęć HEIC, analiza skanu GLB, odczyt szkicu PDF</span><span lang="en">HEIC photo conversion, GLB scan analysis, reading the PDF sketch</span></li>
+      <li><b>Playwright</b> + headless <b>Chromium</b> – <span lang="pl">renderowanie ścian modelu i testy wizualne</span><span lang="en">rendering model elevations and visual tests</span></li>
+      <li><b>Polycam</b> (LiDAR) <span lang="pl">oraz</span><span lang="en">and</span> <b>iPhone</b> – <span lang="pl">skan pokoju i zdjęcia</span><span lang="en">room scan and photos</span></li>
+    </ul>
+
+    <p class="note" lang="pl">Uwaga: wymiary pochodzą z pomiaru i skanu, ale położenie gniazdek jest orientacyjne (±30 cm), a przejścia liczone są zachowawczo. To narzędzie do porównywania pomysłów, nie dokumentacja wykonawcza. Pełny opis i kod źródłowy: <a href="https://github.com/krzyszur/websites_open/blob/main/gabinet/README.md">gabinet/README.md</a>.</p>
+    <p class="note" lang="en">Note: dimensions come from measurement and the scan, but outlet positions are approximate (±30 cm) and passage widths are computed conservatively. This is a tool for comparing ideas, not construction documentation. Full write-up and source code: <a href="https://github.com/krzyszur/websites_open/blob/main/gabinet/README.md">gabinet/README.md</a>.</p>
+
+    <a class="open" href="gabinet/"><span lang="pl">Otwórz projekt</span><span lang="en">Open project</span></a>
+    <a class="open sec" href="https://github.com/krzyszur/websites_open/tree/main/gabinet/src"><span lang="pl">Kod źródłowy</span><span lang="en">Source code</span></a>
+  </article>
+</main>
+
+<footer>
+  <span lang="pl">Strony powstają z pomocą AI (Claude). Dodawanie kolejnych projektów: zobacz README.md.</span>
+  <span lang="en">Pages are built with the help of AI (Claude). To add more projects, see README.md.</span>
+</footer>
+
+<script>
+(function () {
+  var body = document.body;
+  function setLang(l) {
+    body.setAttribute('data-lang', l);
+    document.documentElement.lang = l;
+    document.querySelectorAll('.lang button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-set') === l); });
+    try { localStorage.setItem('lang', l); } catch (e) {}
+  }
+  document.querySelectorAll('.lang button').forEach(function (b) { b.addEventListener('click', function () { setLang(b.getAttribute('data-set')); }); });
+  var saved = null; try { saved = localStorage.getItem('lang'); } catch (e) {}
+  setLang(saved || ((navigator.language || 'pl').slice(0, 2) === 'pl' ? 'pl' : 'en'));
+})();
+</script>
+</body>
+</html>

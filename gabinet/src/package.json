@@ -1,0 +1,7 @@
+{
+  "name": "gabinet-planner",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs", "check": "node check2.mjs" },
+  "dependencies": { "esbuild": "^0.28.2", "three": "0.160.0" }
+}

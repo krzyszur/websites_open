@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gabinet – projekt pokoju: biuro + gościnna sypialnia</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--ink:#1d2127;--mut:#6b7280;--acc:#2f6fed;--line:#e3e6ea;--ok:#1d7a46;--warn:#b45309}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 400px;height:100vh}
+#stageWrap{position:relative;min-width:0;overflow:hidden}
+#stage{position:absolute;inset:0}
+.hud{position:absolute;left:12px;top:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;z-index:3;max-width:calc(100% - 24px)}
+.hud .grp{background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:10px;padding:6px 8px;display:flex;gap:10px;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 10px;cursor:pointer}
+button:hover{border-color:#b9c0ca}
+label{display:inline-flex;gap:5px;align-items:center;cursor:pointer;white-space:nowrap}
+select{font:inherit;border:1px solid var(--line);border-radius:6px;padding:3px 4px;background:#fff}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg label{padding:5px 12px;border-right:1px solid var(--line);background:#fff}
+.seg label:last-child{border-right:0}
+.seg input{display:none}
+.seg label:has(input:checked){background:var(--acc);color:#fff}
+.hint{position:absolute;left:12px;bottom:10px;color:var(--mut);font-size:12px;background:rgba(255,255,255,.85);padding:4px 8px;border-radius:8px;z-index:3}
+aside{background:var(--card);border-left:1px solid var(--line);overflow:auto;padding:16px 18px 28px}
+h1{font-size:17px;margin:0 0 2px}
+.sub{color:var(--mut);font-size:12.5px;margin-bottom:12px}
+#tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 12px}
+.tab{width:40px;height:36px;font-weight:600;font-size:15px}
+.tab.on{background:var(--acc);border-color:var(--acc);color:#fff}
+h2{font-size:15px;margin:0 0 4px}
+h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:16px 0 6px}
+ul{margin:0;padding-left:18px}li{margin:2px 0}
+#pros li::marker{color:var(--ok)}#cons li::marker{color:var(--warn)}
+#metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.m{border:1px solid var(--line);border-radius:10px;padding:8px 10px}.m b{display:block;font-size:17px}.m span{color:var(--mut);font-size:12px;line-height:1.25;display:block}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--mut);font-weight:500;font-size:12px}
+td:nth-child(n+2),th:nth-child(n+2){text-align:right;white-space:nowrap}
+#plan svg{width:100%;height:auto;background:#fafafa;border:1px solid var(--line);border-radius:10px}
+.room{fill:#fff;stroke:#222;stroke-width:3}.win{fill:#9bc4e2;stroke:#2b6a99}.door{fill:#fff;stroke:#555;stroke-width:1.5}.rad{fill:#eee;stroke:#aaa}
+.swing{fill:none;stroke:#8b8f96;stroke-dasharray:4 3}
+.zone{fill:none;stroke:#c0504d;stroke-dasharray:3 3}.fn{fill:#e8dcc8;stroke:#8a6d3b}.cab{fill:#ececec;stroke:#555}.bed{fill:#cfe0f3;stroke:#2f6fed;stroke-dasharray:5 3}.wsh{fill:none;stroke:#aaa;stroke-dasharray:2 2}
+.tl{font-size:10px;fill:#333}.cap{font-size:10px;fill:#6b7280}
+circle.socket{fill:#2f7ee6;stroke:#fff}circle.switch{fill:#ffb347;stroke:#fff}
+#outlets{list-style:none;padding:0;font-size:13px}#outlets li{padding:3px 0}#outlets li.ok b{color:var(--ok)}#outlets li.warn b{color:var(--warn)}
+.err{background:#fde8e8;border:1px solid #f5b5b5;color:#9b1c1c;border-radius:8px;padding:8px;margin:8px 0;font-size:13px}
+.grp2 select{width:100%;max-width:100%}.grp2{display:flex;gap:6px;align-items:center;margin:8px 0 2px;flex-wrap:wrap}.grp2 button.on{background:#1d2127;color:#fff;border-color:#1d2127}.rej{background:#fff4e5;border:1px solid #f0c27b;color:#7a4a00;border-radius:8px;padding:8px 10px;margin:6px 0;font-size:12.5px}
+.note{font-size:12px;color:var(--mut);margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
+.olabel{font:600 10px system-ui;background:#2f7ee6;color:#fff;border-radius:9px;padding:1px 6px;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.olabel.switch{background:#e08a14}
+.dlabel{font:600 11px system-ui;background:#fff;color:#d1411f;border:1px solid #d1411f;border-radius:6px;padding:0 5px}
+@media (max-width:900px){.app{grid-template-columns:1fr;grid-template-rows:62vh auto;height:auto}aside{border-left:0;border-top:1px solid var(--line)}}
+@media print{.app{display:block;height:auto}#stageWrap{height:60vh}aside{overflow:visible}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="stageWrap">
+    <div id="stage"></div>
+    <div class="hud">
+      <div class="grp"><div class="seg"><label><input type="radio" name="mode" value="day">☀ dzień (łóżko złożone)</label><label><input type="radio" name="mode" value="night" checked>☾ noc (rozłożone)</label></div></div>
+      <div class="grp"><button data-cam="persp">Perspektywa</button><button data-cam="top">Z góry</button><button data-cam="door">Od drzwi</button><button data-cam="window">Od okna</button><button data-cam="west">Od zachodu</button></div>
+      <div class="grp"><label><input type="checkbox" id="cDoor" checked>drzwi otwarte</label><label><input type="checkbox" id="cOut" checked>gniazdka</label><label><input type="checkbox" id="cDim">wymiary</label>
+        <label>ściany <select id="sWall"><option value="auto">auto-ukrywanie</option><option value="full">pełne</option><option value="low">niskie</option></select></label><button id="shot" title="Zapisz obraz PNG">PNG</button></div>
+    </div>
+    <div class="hint">Przeciągnij – obrót · kółko – zoom · prawy przycisk – przesunięcie</div>
+  </div>
+  <aside>
+    <h1>Gabinet – biuro + gościnna sypialnia</h1>
+    <div class="sub">Pokój 3,44 × 3,58 m, wysokość 2,83 m · okno N, drzwi S, słup przy ścianie E · 15 układów (po 5 na rodzaj łóżka) + archiwum odrzuconych</div>
+    <div id="grp" class="grp2"><button class="on">Aktualne (wersja 4)</button><button>Odrzucone</button><select id="bedsel" title="Rodzaj łóżka"><option value="all">Rodzaj łóżka: wszystkie (15)</option><option value="fixed">Łóżko stałe (5)</option><option value="wall">Łóżko składane do ściany (5)</option><option value="sofa">Rozkładana sofa – kanapa z funkcją spania (5)</option></select><select id="deskvar" title="Rodzaj biurka"><option value="full">Biurko: blat ciągły na wymiar</option><option value="store">Biurko ze sklepu 180×70 + blat we wnęce od krawędzi okna (zlicowane)</option></select><select id="oldsel" style="display:none"><option value="1">wersja 3 – 7 układów</option><option value="2">wersja 2 – łóżka składane</option><option value="3">wersja 1 – pierwsza tura</option></select></div>
+    <div id="tabs"></div>
+    <div id="rej"></div>
+    <h2 id="lname"></h2><div id="btype" class="sub" style="margin:0 0 4px;font-weight:600"></div><div id="lshort" class="sub"></div>
+    <div id="errs"></div>
+    <div id="metrics"></div>
+    <div id="plan"></div>
+    <h3>Goście: ubrania, bagaże, szafka nocna</h3><ul id="guest"></ul>
+    <h3>Zalety</h3><ul id="pros"></ul>
+    <h3>Wady / uwagi</h3><ul id="cons"></ul>
+    <h3>Meble i wymiary (cm)</h3>
+    <table><thead><tr><th>Element</th><th>szer.×gł.</th><th>wys.</th></tr></thead><tbody id="furn"></tbody></table>
+    <h3>Gniazdka i włącznik w tym układzie</h3><ul id="outlets"></ul>
+    <div class="note"><b>Skąd dane:</b> wymiary ze szkicu z pomiarem; przejścia liczone konserwatywnie (strefa kwadratowa wokół osoby); skan Polycam zgodny ze szkicem do ok. 2 cm (3,46 × 3,60 m); okno, parapet, grzejnik i drzwi ze skanu i zdjęć IMG_0121–0139. <b>Okno nad biurkiem:</b> w wariancie „biurko ze sklepu” blat we wnęce zaczyna się dokładnie na krawędzi wnęki okna (nie wchodzi pod okno), a pod samym oknem stoi biurko (parapet 50 cm, blat 74 cm) – skrzydło nad nim da się uchylić, pełne otwarcie wymaga zdjęcia rzeczy z blatu; grzejnik zostaje pod blatem (zostaw ≥30 cm wolnej przestrzeni nad nim). <b>Pozycje gniazdek i włącznika są orientacyjne (±30 cm)</b> – przed zamówieniem mebli na wymiar zmierz je miarką. Przejścia liczone dla swobodnej strefy o szerokości podanej w kafelku; „segregatory” to szacunek (8 cm/segregator).</div>
+  </aside>
+</div>
+<script>/*BUNDLE*/</script>
+</body>
+</html>
