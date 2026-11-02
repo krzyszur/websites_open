@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { ROOM, OUTLETS, LAYOUTS, analyze, footprints, outletStatus, DOOR_SWING, applyDeskVariant } from './layouts.js';
 import { LAYOUTS_V3 } from './data_v3.js';
+import { LAYOUTS_V4 } from './data_v4.js';
 import { LAYOUTS_V1 } from './data_v1.js';
 import { LAYOUTS_V2 } from './data_v2.js';
 
@@ -300,15 +301,26 @@ function sofaOpenUnit(it, g) {
   }
 }
 
-function railUnit(it, g) {
-  const y0 = it.y, len = it.d; const side = it.wallSide || 'W';
-  const X = (a, b) => side === 'W' ? [it.x + a, it.x + b] : [it.x + it.w - b, it.x + it.w - a];
-  const P = (a, b, ya, yb, h0, h1, col) => { const [x0, x1] = X(a, b); pbox(x0, x1, ya, yb, h0, h1, col, g, { noEdge: true }); };
-  P(0, 0.02, y0, y0 + len, 1.80, 1.98, 0xd8d6d0);                       // listwa montażowa na ścianie
-  P(0.02, 0.26, y0 + 0.03, y0 + 0.05, 1.86, 1.89, 0x9aa0a6); P(0.02, 0.26, y0 + len - 0.05, y0 + len - 0.03, 1.86, 1.89, 0x9aa0a6);   // wsporniki
-  P(0.245, 0.26, y0 + 0.03, y0 + len - 0.03, 1.86, 1.89, 0x9aa0a6);      // drążek
-  const cols = [0x3b5b8c, 0xb85c5c, 0x6b7f5a, 0xd8c9a8]; const n = Math.max(3, Math.round(len / 0.12));
-  for (let k = 0; k < n; k++) { const yk = y0 + 0.07 + k * (len - 0.14) / (n - 1); const hh = 0.62 + (k % 3) * 0.12; P(0.05, 0.45, yk - 0.015, yk + 0.015, 1.86 - hh, 1.86, cols[k % cols.length]); }
+function artTexture(kind) {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 160; const x = c.getContext('2d');
+  x.fillStyle = '#f4efe6'; x.fillRect(0, 0, 128, 160);
+  if (kind === 0) { x.fillStyle = '#7fa38f'; x.beginPath(); x.arc(64, 70, 38, 0, 7); x.fill(); x.fillStyle = '#d9a35b'; x.fillRect(20, 108, 88, 10); x.fillStyle = '#4b6b8a'; x.fillRect(20, 124, 88, 6); }
+  else if (kind === 1) { x.strokeStyle = '#4b6b8a'; x.lineWidth = 6; for (let i = 0; i < 5; i++) { x.beginPath(); x.moveTo(10, 30 + i * 24); x.bezierCurveTo(40, 5 + i * 24, 80, 55 + i * 24, 118, 30 + i * 24); x.stroke(); } }
+  else { x.fillStyle = '#c9786b'; x.fillRect(18, 22, 44, 60); x.fillStyle = '#e3b858'; x.fillRect(66, 40, 44, 52); x.fillStyle = '#5c7f9a'; x.fillRect(30, 94, 68, 44); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function pictureUnit(it, g) {
+  const fw = 0.025, t = 0.03; const wall = it.wall;
+  const frame = new THREE.Group();
+  const w = (wall === 'N' || wall === 'S') ? it.w : it.d;
+  const m = new THREE.MeshLambertMaterial({ color: it.color });
+  const fb = new THREE.Mesh(new THREE.BoxGeometry(w, it.h, t), m); frame.add(fb);
+  const pl = new THREE.Mesh(new THREE.PlaneGeometry(w - 2 * fw, it.h - 2 * fw), new THREE.MeshBasicMaterial({ map: artTexture(it.art || 0) }));
+  pl.position.z = t / 2 + 0.001; frame.add(pl);
+  const rot = { N: 0, S: Math.PI, W: Math.PI / 2, E: -Math.PI / 2, P: -Math.PI / 2 }[wall];
+  frame.rotation.y = rot;
+  frame.position.set(it.x + it.w / 2, it.z0 + it.h / 2, it.y + it.d / 2);
+  g.add(frame);
 }
 
 function sofaUnit(it, g, open) {
@@ -357,7 +369,16 @@ function boxUnit(it, g) {
   const wall = it.back || nearestWall(it); const lc = 0x7a7f86; const e = 0.004;
   const tall = it.h > 1.2; const y0 = tall ? 0.05 : 0.03, y1 = it.h - (tall ? 0.05 : 0.03);
   const along = (wall === 'N' || wall === 'S') ? it.w : it.d; const nd = Math.max(1, Math.round(along / 0.45));
-  for (let i = 1; i < nd; i++) {
+  if (it.drawers) {
+    const nF = it.drawers, face = wall === 'W' ? 'E' : wall === 'E' ? 'W' : wall === 'N' ? 'S' : 'N';
+    for (let k = 0; k < nF; k++) {
+      const z0 = 0.04 + k * (it.h - 0.06) / nF, z1 = 0.04 + (k + 1) * (it.h - 0.06) / nF;
+      const zc = (z0 + z1) / 2, hw = Math.min(0.08, along * 0.12);
+      if (face === 'E') { pbox(it.x + it.w, it.x + it.w + e, it.y + 0.01, it.y + it.d - 0.01, z1 - 0.004, z1 + 0.002, lc, g2, { noEdge: true }); pbox(it.x + it.w, it.x + it.w + 0.02, it.y + it.d / 2 - hw, it.y + it.d / 2 + hw, zc - 0.007, zc + 0.007, 0x9aa0a6, g2, { noEdge: true }); }
+      if (face === 'W') { pbox(it.x - e, it.x, it.y + 0.01, it.y + it.d - 0.01, z1 - 0.004, z1 + 0.002, lc, g2, { noEdge: true }); pbox(it.x - 0.02, it.x, it.y + it.d / 2 - hw, it.y + it.d / 2 + hw, zc - 0.007, zc + 0.007, 0x9aa0a6, g2, { noEdge: true }); }
+    }
+  }
+  if (!it.drawers) for (let i = 1; i < nd; i++) {
     const f = i / nd;
     if (wall === 'N') pbox(it.x + f * it.w - e, it.x + f * it.w + e, it.y + it.d, it.y + it.d + e, y0, y1, lc, g2, { noEdge: true });
     if (wall === 'S') pbox(it.x + f * it.w - e, it.x + f * it.w + e, it.y - e, it.y, y0, y1, lc, g2, { noEdge: true });
@@ -379,6 +400,19 @@ function fixedBedUnit(it, g) {
   const sofa = it.type === 'sofabed'; const head = it.head || 'N';
   pbox(x0, x1, y0, y1, 0.05, 0.30, sofa ? it.color : 0xd9b384, g);                       // skrzynia / pojemnik
   pbox(x0 + 0.01, x1 - 0.01, y0 + 0.01, y1 - 0.01, 0.30, 0.52, 0xece7de, g);  // materac
+  if (!sofa) { // szuflady pod łóżkiem – fronty na długich bokach niezbliżonych do ściany
+    const e = 0.006, lc = 0x8a6d45, hc = 0x9aa0a6, nS = 2;
+    const longX = (it.head === 'N' || it.head === 'S' || !it.head);
+    const sides = longX ? [['x0', x0 > 0.02], ['x1', x1 < 3.42]] : [['y0', y0 > 0.02], ['y1', y1 < 3.56]];
+    for (const [sd, ok] of sides) { if (!ok) continue;
+      const len = longX ? (y1 - y0) : (x1 - x0), st = len / nS;
+      for (let k = 0; k < nS; k++) { const a = (longX ? y0 : x0) + k * st + 0.02, b = a + st - 0.04, m = (a + b) / 2;
+        if (sd === 'x0') { pbox(x0 - e, x0, a, b, 0.07, 0.28, lc, g, { noEdge: true }); pbox(x0 - 0.02, x0, m - 0.07, m + 0.07, 0.17, 0.19, hc, g, { noEdge: true }); }
+        if (sd === 'x1') { pbox(x1, x1 + e, a, b, 0.07, 0.28, lc, g, { noEdge: true }); pbox(x1, x1 + 0.02, m - 0.07, m + 0.07, 0.17, 0.19, hc, g, { noEdge: true }); }
+        if (sd === 'y0') { pbox(a, b, y0 - e, y0, 0.07, 0.28, lc, g, { noEdge: true }); pbox(m - 0.07, m + 0.07, y0 - 0.02, y0, 0.17, 0.19, hc, g, { noEdge: true }); }
+        if (sd === 'y1') { pbox(a, b, y1, y1 + e, 0.07, 0.28, lc, g, { noEdge: true }); pbox(m - 0.07, m + 0.07, y1, y1 + 0.02, 0.17, 0.19, hc, g, { noEdge: true }); }
+      } }
+  }
   const hv = { S: [0, 1], N: [0, -1], W: [-1, 0], E: [1, 0] }[head]; const pv = [-hv[1], hv[0]];
   const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2; const L = (head === 'N' || head === 'S') ? it.d : it.w, Wd = (head === 'N' || head === 'S') ? it.w : it.d;
   const along = (head === 'N' || head === 'S');
@@ -486,7 +520,7 @@ function buildLayout(layout) {
       case 'printer': pbox(it.x, it.x + it.w, it.y, it.y + it.d, it.z0, it.z0 + it.h, it.color, g); pbox(it.x + 0.04, it.x + it.w - 0.04, it.y + it.d, it.y + it.d + 0.08, it.z0 + 0.02, it.z0 + 0.04, 0xffffff, g, { noEdge: true }); break;
       case 'fixedbed': fixedBedUnit(it, g); break;
       case 'lshelf': lshelfUnit(it, g); break;
-      case 'rail': railUnit(it, g); break;
+      case 'picture': pictureUnit(it, g); break;
       case 'plant': plantUnit(it, g); break;
       case 'drawers': drawersUnit(it, g); break;
       case 'armchair': armchairUnit(it, g); break;
@@ -531,7 +565,9 @@ function updateWalls() {
 
 // ---------- UI ----------
 const GROUPS = [
-  { id: 'cur', short: 'Aktualne', name: 'Wersja 4 – po 5 układów na rodzaj łóżka', layouts: LAYOUTS, rejected: false },
+  { id: 'cur', short: 'Aktualne', name: 'Wersja 5 – szuflady zamiast wieszaka, obrazki przy oknie', layouts: LAYOUTS, rejected: false },
+  { id: 'v4', short: 'Odrzucone: wersja 4', name: 'Wersja 4 – komody z wieszakiem ściennym, pełne półki L (15 układów)', layouts: LAYOUTS_V4, rejected: true,
+    reason: 'Zastąpiona wersją 5: rezygnacja z wieszaka na ubrania (ubrania gości w szufladach komody i pod łóżkiem), dodane obrazki po obu stronach okna, a półki L skrócone, żeby nie zachodziły na okno.' },
   { id: 'v3', short: 'Odrzucone: wersja 3', name: 'Wersja 3 – sofy rozkładane i łóżka stałe/składane (7 układów)', layouts: LAYOUTS_V3, rejected: true,
     reason: 'Zastąpiona wersją 4: tu „sofa” była łóżkiem z materacem rozkładanym do przodu, a układów było 7. Wersja 4 modeluje sofę jako kanapę z funkcją spania (jak na zdjęciu, prostą i narożną) i daje po 5 układów dla każdego rodzaju łóżka.' },
   { id: 'v2', short: 'Odrzucone: wersja 2', name: 'Wersja 2 – łóżka składane do ściany 140×200', layouts: LAYOUTS_V2, rejected: true,
@@ -592,7 +628,7 @@ function drawPlan(L) {
     <text x="${ox}" y="${oy - 8}" class="cap">okno (N)</text><text x="${ox}" y="${oy + D * S + 16}" class="cap">drzwi (S)</text></svg>`;
 }
 function shortName(f) {
-  if (f.kind === 'bed') return 'łóżko ' + cm(f.w) + '×' + cm(f.d); const t = f.ref.type; if (f.kind === 'zone') return ''; if (t === 'box') return f.ref.wardrobe ? 'szafa' : f.ref.bedside ? 'nocna' : f.ref.underDesk ? '' : (/^Komoda/.test(f.ref.label) ? 'komoda' : 'ława'); return { wallbed: 'szafa', desk: 'biurko', chair: '', armchair: 'fotel', sofa: 'sofa', sofabed: 'łóżko', tower: 'regał', box: 'komoda', table: '', fixedbed: 'łóżko 140×200', printer: '', drawers: '', rail: '', plant: 'monstera' }[t] ?? '';
+  if (f.kind === 'bed') return 'łóżko ' + cm(f.w) + '×' + cm(f.d); const t = f.ref.type; if (f.kind === 'zone') return ''; if (t === 'box') return f.ref.wardrobe ? 'szafa' : f.ref.bedside ? 'nocna' : f.ref.underDesk ? '' : (/^Komoda/.test(f.ref.label) ? 'komoda' : 'ława'); return { wallbed: 'szafa', desk: 'biurko', chair: '', armchair: 'fotel', sofa: 'sofa', sofabed: 'łóżko', tower: 'regał', box: 'komoda', table: '', fixedbed: 'łóżko 140×200', printer: '', drawers: '', picture: '', plant: 'monstera' }[t] ?? '';
 }
 
 // zakładki
@@ -647,7 +683,7 @@ function tick() {
 }
 resize();
 const hashStr = (() => { try { return location.hash; } catch (e) { return ''; } })();
-const hm = hashStr.match(/#(cur|v1|v2|v3)-(\d+)/);
+const hm = hashStr.match(/#(cur|v1|v2|v3|v4)-(\d+)/);
 const startG = hm ? Math.max(0, GROUPS.findIndex(g => g.id === hm[1])) : 0; const startL = hm ? Math.max(0, GROUPS[startG].layouts.findIndex(L => L.id === parseInt(hm[2]))) : 0;
 setGroup(startG, startL); tick();
 window.__app = { setLayout, setGroup, goCam, presets, setMode: (m) => { document.querySelector(`input[name=mode][value=${m}]`).click(); }, camera, controls, scene };

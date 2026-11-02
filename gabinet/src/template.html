@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Gabinet – projekt pokoju: biuro + gościnna sypialnia</title>
 <style>
 :root{--bg:#f4f5f7;--card:#fff;--ink:#1d2127;--mut:#6b7280;--acc:#2f6fed;--line:#e3e6ea;--ok:#1d7a46;--warn:#b45309}
@@ -50,7 +50,29 @@ circle.socket{fill:#2f7ee6;stroke:#fff}circle.switch{fill:#ffb347;stroke:#fff}
 .olabel{font:600 10px system-ui;background:#2f7ee6;color:#fff;border-radius:9px;padding:1px 6px;box-shadow:0 1px 2px rgba(0,0,0,.3)}
 .olabel.switch{background:#e08a14}
 .dlabel{font:600 11px system-ui;background:#fff;color:#d1411f;border:1px solid #d1411f;border-radius:6px;padding:0 5px}
-@media (max-width:900px){.app{grid-template-columns:1fr;grid-template-rows:62vh auto;height:auto}aside{border-left:0;border-top:1px solid var(--line)}}
+#stage canvas{touch-action:none;display:block}
+@media (max-width:900px){
+ html,body{height:auto;font-size:15px}
+ .app{display:block;height:auto}
+ #stageWrap{position:sticky;top:0;z-index:20;height:48vh;height:48svh;min-height:260px;border-bottom:1px solid var(--line);background:#e9ecf0}
+ aside{border-left:0;padding:12px 14px 40px;overflow:visible}
+ .hud{left:6px;right:6px;top:6px;max-width:none;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+ .hud::-webkit-scrollbar{display:none}
+ .hud .grp{flex:0 0 auto;padding:4px 6px;gap:6px}
+ .hud button,.hud .seg label,.hud label{min-height:36px;display:inline-flex;align-items:center;font-size:13px}
+ .hud .seg label{padding:4px 9px}
+ .hud select{min-height:34px;font-size:14px}
+ .hint{display:none}
+ .tab{width:44px;height:44px}
+ #tabs{gap:6px}
+ .grp2 select,.grp2 button{min-height:42px;font-size:15px}
+ select{font-size:16px}
+ #metrics{grid-template-columns:1fr 1fr}
+ table{font-size:12.5px}
+ .dl a{display:inline-block;padding:6px 0}
+ .olabel,.dlabel{font-size:11px}
+}
+@media (max-width:900px) and (orientation:landscape){#stageWrap{height:70vh;height:70svh}}
 @media print{.app{display:block;height:auto}#stageWrap{height:60vh}aside{overflow:visible}}
 </style>
 </head>
@@ -69,7 +91,7 @@ circle.socket{fill:#2f7ee6;stroke:#fff}circle.switch{fill:#ffb347;stroke:#fff}
   <aside>
     <h1>Gabinet – biuro + gościnna sypialnia</h1>
     <div class="sub">Pokój 3,44 × 3,58 m, wysokość 2,83 m · okno N, drzwi S, słup przy ścianie E · 15 układów (po 5 na rodzaj łóżka) + archiwum odrzuconych</div>
-    <div id="grp" class="grp2"><button class="on">Aktualne (wersja 4)</button><button>Odrzucone</button><select id="bedsel" title="Rodzaj łóżka"><option value="all">Rodzaj łóżka: wszystkie (15)</option><option value="fixed">Łóżko stałe (5)</option><option value="wall">Łóżko składane do ściany (5)</option><option value="sofa">Rozkładana sofa – kanapa z funkcją spania (5)</option></select><select id="deskvar" title="Rodzaj biurka"><option value="full">Biurko: blat ciągły na wymiar</option><option value="store">Biurko ze sklepu 180×70 + blat we wnęce od krawędzi okna (zlicowane)</option></select><select id="oldsel" style="display:none"><option value="1">wersja 3 – 7 układów</option><option value="2">wersja 2 – łóżka składane</option><option value="3">wersja 1 – pierwsza tura</option></select></div>
+    <div id="grp" class="grp2"><button class="on">Aktualne (wersja 5)</button><button>Odrzucone</button><select id="bedsel" title="Rodzaj łóżka"><option value="all">Rodzaj łóżka: wszystkie (15)</option><option value="fixed">Łóżko stałe (5)</option><option value="wall">Łóżko składane do ściany (5)</option><option value="sofa">Rozkładana sofa – kanapa z funkcją spania (5)</option></select><select id="deskvar" title="Rodzaj biurka"><option value="full">Biurko: blat ciągły na wymiar</option><option value="store">Biurko ze sklepu 180×70 + blat we wnęce od krawędzi okna (zlicowane)</option></select><select id="oldsel" style="display:none"><option value="1">wersja 4 – z wieszakiem</option><option value="2">wersja 3 – 7 układów</option><option value="3">wersja 2 – łóżka składane</option><option value="4">wersja 1 – pierwsza tura</option></select></div>
     <div id="tabs"></div>
     <div id="rej"></div>
     <h2 id="lname"></h2><div id="btype" class="sub" style="margin:0 0 4px;font-weight:600"></div><div id="lshort" class="sub"></div>
