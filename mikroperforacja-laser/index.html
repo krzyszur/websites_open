@@ -181,7 +181,7 @@ footer{color:var(--mut);font-size:.8rem}
   <ul>
     <li>Komórka układu: w linii i naprzemiennie p², heksagonalny p²·√3/2. Liczba otworów = powierzchnia / komórka.</li>
     <li>Objętość otworu (stożek ścięty): V = π·t·(D₁² + D₁D₂ + D₂²)/12. Smukłość AR = t / Ø wylotu (to ona ogranicza wykonalność), kąt stożka = atan((Ø wlot − Ø wylot)/(2t)).</li>
-    <li>Widoczność: oko rozdziela ok. 1′ kątowej (2,9·10⁻⁴ rad). Wzór siatki przestaje być rozróżnialny od odległości p / 2,9·10⁻⁴, pojedynczy otwór od Ø/2,9·10⁻⁴. To granica dla wysokiego kontrastu; przy niskim kontraście (lampa wyłączona) wzór znika bliżej. Dokładniejszy wynik daje symulator z renderami.</li>
+    <li>Widoczność: oko rozdziela ok. 1′ kątowej (2,9·10⁻⁴ rad). Wzór siatki przestaje być rozróżnialny od odległości p / 2,9·10⁻⁴, pojedynczy otwór od Ø/2,9·10⁻⁴. To granica dla wysokiego kontrastu; przy niskim kontraście (np. matowa, szczotkowana powierzchnia) wzór znika bliżej. Dokładniejszy wynik daje symulator z renderami.</li>
   </ul>
   <h3>Impulsy ultrakrótkie (ps, fs)</h3>
   <ul>
@@ -464,7 +464,7 @@ function calc(){
   else if(g.bridge < 60) gflags.push(['w', `Między wlotami zostaje ${nf(g.bridge)} µm materiału: mało, ryzyko przegrzania mostka i odkształcenia blachy.`]);
   if(g.openIn > 0.5) gflags.push(['w', `Prześwit po stronie wlotu ${nf(g.openIn*100)} %: blacha będzie wiotka.`]);
   const visTxt = g.visPitch <= 1.0 ? ['o', `Siatka otworów jest poniżej rozdzielczości oka już od ${nf(g.visPitch,2)} m (wysoki kontrast), pojedynczy otwór od ${nf(g.visHole,2)} m.`]
-                                   : ['i', `Przy wysokim kontraście wzór siatki rozróżnia się do ok. ${nf(g.visPitch,1)} m, pojedynczy otwór do ${nf(g.visHole,2)} m. Przy wyłączonym świetle kontrast jest niski i granica jest bliżej; rozstrzyga symulator z renderami.`];
+                                   : ['i', `Przy wysokim kontraście wzór siatki rozróżnia się do ok. ${nf(g.visPitch,1)} m, pojedynczy otwór do ${nf(g.visHole,2)} m. Przy niskim kontraście granica jest bliżej; rozstrzyga symulator z renderami.`];
   gflags.push(visTxt);
   // energia wprowadzona (górna granica nagrzania)
   let heat = '';
