@@ -96,6 +96,44 @@ body[data-lang="en"] [lang="pl"]{display:none}
     <a class="open sec" href="gabinet/plan-pokoju.dxf">DXF</a>
     <a class="open sec" href="https://github.com/krzyszur/websites_open/tree/main/gabinet/src"><span lang="pl">Kod źródłowy</span><span lang="en">Source code</span></a>
   </article>
+  <article class="card" id="mikroperforacja-laser">
+    <h2 lang="pl">Kalkulator mikroperforacji laserowej</h2>
+    <h2 lang="en">Laser micro-perforation calculator</h2>
+    <div class="meta" lang="pl">Listopad 2026 · jeden plik HTML · działa offline · strona po polsku</div>
+    <div class="meta" lang="en">November 2026 · single HTML file · works offline · page in Polish</div>
+
+    <p lang="pl">Narzędzie do doboru lasera do wiercenia mikrootworów (dziesiątki do setek µm) w blachach ze stali nierdzewnej 304, miedzi i aluminium. Po podaniu grubości, średnic wlotu i wylotu, rozstawu i układu otworów porównuje <b>8 klas laserów</b> (ns, ps, fs; podczerwień, zieleń, UV) i podaje długość fali z uzasadnieniem absorpcji, czas i energię impulsu, fluencję względem progu ablacji, metodę wiercenia, plamkę i obiektyw, liczbę impulsów, czas na otwór i na cały element, ryzyka (strefa wpływu ciepła, grat, akumulacja ciepła) oraz orientacyjną cenę maszyny.</p>
+    <p lang="en">A tool for choosing a laser to drill micro-holes (tens to hundreds of µm) in stainless steel 304, copper and aluminium sheet. From thickness, entry and exit diameters, pitch and hole layout it compares <b>8 laser classes</b> (ns, ps, fs; infrared, green, UV) and gives the wavelength with an absorption rationale, pulse duration and energy, fluence relative to the ablation threshold, drilling method, spot size and lens, pulses per hole, time per hole and per part, risks (heat-affected zone, burr, heat accumulation) and an indicative machine price.</p>
+
+    <div class="tags"><span>laser drilling</span><span>ablation threshold</span><span>ps / fs / ns</span><span>no dependencies</span></div>
+
+    <h3 lang="pl">Jak powstała</h3>
+    <h3 lang="en">How it was made</h3>
+    <ul lang="pl">
+      <li>Model fizyczny: logarytmiczny model ablacji d = δ·ln(F/F<sub>th</sub>) dla impulsów ps/fs (Neuenschwander 2012, Nolte 1997) i cieplny próg odparowania z bilansem energii dla impulsów ns; absorpcja z danych optycznych (Palik).</li>
+      <li>Reguły doboru metody (udarowa, helikalna, trepanacja) i plamki z naturalnego stożka otworu danej klasy lasera; ranking klas według wykonalności, czasu, ceny i jakości krawędzi.</li>
+      <li>Strona pokazuje wszystkie założenia, źródła stałych i listę rzeczy, których model nie uwzględnia (niepewność czasów ok. 3×).</li>
+      <li>Testy: Playwright + Chromium na trzech przykładach, widok telefonu i tryb ciemny.</li>
+    </ul>
+    <ul lang="en">
+      <li>Physics: logarithmic ablation model d = δ·ln(F/F<sub>th</sub>) for ps/fs pulses (Neuenschwander 2012, Nolte 1997) and a thermal vaporisation threshold with an energy balance for ns pulses; absorptance from optical data (Palik).</li>
+      <li>Rules for the drilling method (percussion, helical, trepanning) and spot size from each laser class’s natural hole taper; classes are ranked by feasibility, time, price and edge quality.</li>
+      <li>The page lists every assumption, the sources of the constants, and what the model leaves out (drilling time uncertainty about 3×).</li>
+      <li>Testing: Playwright + Chromium on three examples, phone width and dark mode.</li>
+    </ul>
+
+    <h3 lang="pl">Użyte narzędzia</h3>
+    <h3 lang="en">Tools used</h3>
+    <ul>
+      <li><b>Claude</b> (Anthropic) in <b>Claude Code</b> – <span lang="pl">model fizyczny, kod, testy</span><span lang="en">physics model, code, testing</span></li>
+      <li><b>HTML + JavaScript</b>, <span lang="pl">bez bibliotek</span><span lang="en">no libraries</span>; <b>Playwright</b> + headless <b>Chromium</b> – <span lang="pl">testy</span><span lang="en">testing</span></li>
+    </ul>
+
+    <p class="note" lang="pl">Uwaga: to szacunki inżynierskie do rozmowy z wykonawcą i wyboru klasy maszyny, nie parametry procesu. Progi ablacji mają niepewność ok. 2×, ceny maszyn ±50 %. Opis: <a href="https://github.com/krzyszur/websites_open/blob/main/mikroperforacja-laser/README.md">mikroperforacja-laser/README.md</a>.</p>
+    <p class="note" lang="en">Note: these are engineering estimates for talking to a job shop and choosing a machine class, not process parameters. Ablation thresholds are uncertain by about 2×, machine prices by ±50 %. Write-up: <a href="https://github.com/krzyszur/websites_open/blob/main/mikroperforacja-laser/README.md">mikroperforacja-laser/README.md</a>.</p>
+
+    <a class="open" href="mikroperforacja-laser/"><span lang="pl">Otwórz kalkulator</span><span lang="en">Open calculator</span></a>
+  </article>
 </main>
 
 <footer>

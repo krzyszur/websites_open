@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kalkulator mikroperforacji laserowej</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Dobór lasera (długość fali, czas impulsu, energia, metoda wiercenia) do mikroperforacji blach ze stali nierdzewnej, miedzi i aluminium. Działa offline.">
+<style>
+/* Układ: dwie kolumny (parametry po lewej, wynik po prawej), pod spodem porównanie klas laserów, fizyka i źródła. */
+:root{
+  --bg:#eef0ef; --panel:#fbfcfb; --ink:#161b1a; --mut:#5b6664; --line:#d5dbd9;
+  --acc:#0b6b64; --acc-soft:#dcefeb; --warn:#a15c00; --warn-soft:#fbefdc; --bad:#a3241b; --bad-soft:#f8e1de; --ok:#2c7a2c; --ok-soft:#e2f2df;
+  --ir:#8f2a2a; --grn:#2d8a3a; --uv:#6a3fb0; --steel:#9aa5a3;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121615; --panel:#1a201f; --ink:#e4e9e7; --mut:#9aa6a3; --line:#2e3735;
+  --acc:#4fc1b6; --acc-soft:#173532; --warn:#e6a24a; --warn-soft:#3a2c17; --bad:#ef7b70; --bad-soft:#3d1f1c; --ok:#7fcf7f; --ok-soft:#1d321d;
+  --ir:#e07a7a; --grn:#6fd17d; --uv:#b394ef; --steel:#6d7876; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121615; --panel:#1a201f; --ink:#e4e9e7; --mut:#9aa6a3; --line:#2e3735;
+  --acc:#4fc1b6; --acc-soft:#173532; --warn:#e6a24a; --warn-soft:#3a2c17; --bad:#ef7b70; --bad-soft:#3d1f1c; --ok:#7fcf7f; --ok-soft:#1d321d;
+  --ir:#e07a7a; --grn:#6fd17d; --uv:#b394ef; --steel:#6d7876; color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:20px}
+header h1{font-size:1.6rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+header p{margin:.3rem 0 0;color:var(--mut);max-width:75ch}
+h2{font-size:1.05rem;margin:0 0 .6rem;text-wrap:balance}
+h3{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin:1rem 0 .4rem}
+.grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+form{display:grid;gap:10px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:grid;gap:3px;font-size:.82rem;color:var(--mut)}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+input[type=range]{padding:0;background:transparent;border:0}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--bg);color:var(--ink);font:inherit;font-size:.82rem;padding:6px 4px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--acc);color:var(--panel)}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets button{font:inherit;font-size:.78rem;border:1px solid var(--acc);color:var(--acc);background:transparent;border-radius:20px;padding:3px 10px;cursor:pointer}
+details{border-top:1px solid var(--line);padding-top:8px}
+summary{cursor:pointer;font-size:.85rem;color:var(--acc)}
+.hint{font-size:.76rem;color:var(--mut)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+/* wynik */
+.reco{display:grid;gap:14px}
+.reco-head{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:20px;padding:3px 11px;font-size:.8rem;font-weight:600;border:1px solid currentColor}
+.chip .dot{width:9px;height:9px;border-radius:50%;background:currentColor}
+.reco-head h2{font-size:1.35rem;margin:0}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.kv div{background:var(--panel);padding:9px 12px;min-width:0}
+.kv b{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:600}
+.kv span{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.98rem}
+.kv small{display:block;color:var(--mut);font-size:.76rem;line-height:1.35;margin-top:2px}
+.why{margin:0;padding-left:18px;display:grid;gap:4px}
+.flags{display:grid;gap:6px}
+.flag{border-radius:6px;padding:7px 10px;font-size:.86rem;border-left:4px solid}
+.flag.w{background:var(--warn-soft);border-color:var(--warn)}
+.flag.b{background:var(--bad-soft);border-color:var(--bad)}
+.flag.o{background:var(--ok-soft);border-color:var(--ok)}
+.flag.i{background:var(--acc-soft);border-color:var(--acc)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:700px){.two{grid-template-columns:minmax(0,1fr)}}
+svg text{fill:var(--ink);font-family:var(--sans)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.84rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+tr.best{background:var(--acc-soft)}
+tr.no td{color:var(--mut)}
+td.wrap{white-space:normal;min-width:300px}
+.bar{display:inline-block;height:7px;border-radius:4px;background:var(--acc);vertical-align:middle}
+.prose{max-width:80ch}
+.prose p,.prose li{margin:.35rem 0}
+code{font-family:var(--mono);font-size:.86em}
+footer{color:var(--mut);font-size:.8rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Kalkulator mikroperforacji laserowej</h1>
+  <p>Podaj materiał, grubość blachy oraz kształt i rozkład otworów. Kalkulator porównuje klasy laserów (ns, ps, fs; podczerwień, zieleń, UV) i podpowiada długość fali, czas i energię impulsu, metodę wiercenia, optykę oraz czas i koszt perforacji. Wyniki to szacunki inżynierskie do rozmowy z wykonawcą, nie parametry procesu. Wszystko liczy się w przeglądarce, bez internetu.</p>
+</header>
+
+<div class="grid">
+<section class="panel" aria-label="Parametry">
+  <form id="f" onsubmit="return false">
+    <div>
+      <h3 style="margin-top:0">Przykłady</h3>
+      <div class="presets">
+        <button type="button" data-p="sym">Stal 0,5 · Ø100/250 co 500</button>
+        <button type="button" data-p="apple">Al 0,4 · Ø30/90 co 200 (patent)</button>
+        <button type="button" data-p="cu">Cu 0,5 · Ø80/200 co 400</button>
+      </div>
+    </div>
+    <label>Materiał
+      <select id="mat">
+        <option value="ss">Stal nierdzewna 304 (1.4301)</option>
+        <option value="cu">Miedź (Cu-ETP / Cu-OF)</option>
+        <option value="al">Aluminium (1xxx / 5xxx)</option>
+      </select>
+    </label>
+    <div class="row">
+      <label>Grubość blachy [mm]<input id="t" type="number" step="0.05" min="0.05" max="3" value="0.5"></label>
+      <label>Powierzchnia
+        <select id="surf"><option value="tech">szlif / walcowana</option><option value="pol">polerowana</option></select>
+      </label>
+    </div>
+    <label>Kształt otworu
+      <div class="seg" id="shape"><button type="button" data-v="cone" class="on">stożkowy</button><button type="button" data-v="straight">prosty</button></div>
+    </label>
+    <div class="row">
+      <label>Ø wylotu (strona widoczna) [µm]<input id="dout" type="number" step="5" min="5" value="100"></label>
+      <label>Ø wlotu (strona lasera) [µm]<input id="din" type="number" step="5" min="5" value="250"></label>
+    </div>
+    <div class="row">
+      <label>Rozstaw [µm]<input id="pitch" type="number" step="10" min="10" value="500"></label>
+      <label>Powierzchnia perforacji [cm²]<input id="area" type="number" step="10" min="1" value="300"></label>
+    </div>
+    <label>Układ otworów
+      <div class="seg" id="layout"><button type="button" data-v="line">w linii</button><button type="button" data-v="stag">naprzemiennie</button><button type="button" data-v="hex" class="on">heksagonalny</button></div>
+    </label>
+    <label>Co ważniejsze <span class="hint" id="prioTxt"></span>
+      <input id="prio" type="range" min="0" max="100" value="65" aria-label="Priorytet: koszt i czas kontra jakość krawędzi">
+      <span class="hint" style="display:flex;justify-content:space-between"><span>czas i cena maszyny</span><span>jakość (bez gratu, HAZ)</span></span>
+    </label>
+    <details>
+      <summary>Ustawienia zaawansowane</summary>
+      <div style="display:grid;gap:10px;margin-top:8px">
+        <div class="row">
+          <label>Fluencja / próg, ultrakrótkie<input id="rUS" type="number" step="1" min="1.5" value="10"></label>
+          <label>Fluencja / próg, ns<input id="rNS" type="number" step="0.5" min="1.2" value="5"></label>
+        </div>
+        <div class="row">
+          <label>Maks. częstotliwość przy wierceniu [kHz]<input id="fdr" type="number" step="50" min="10" value="500"></label>
+          <label>Przeskok między otworami [ms]<input id="jump" type="number" step="0.1" min="0" value="0.5"></label>
+        </div>
+        <p class="hint" style="margin:0">Fluencja / próg: ile razy szczytowa fluencja w plamce przekracza próg ablacji. Dla impulsów ultrakrótkich optimum wydajności to e² ≈ 7,4, przy głębokich otworach zwykle 10–30. Kalkulator podnosi fluencję ponad tę wartość, jeśli inaczej moc lasera nie zostałaby wykorzystana. Maks. częstotliwość: powyżej kilkuset kHz chmura plazmy z poprzedniego impulsu osłabia następny i rośnie akumulacja ciepła. Przeskok: czas skanera galwo na przejście do następnego otworu i ustabilizowanie.</p>
+      </div>
+    </details>
+  </form>
+</section>
+
+<section class="panel reco" id="out" aria-live="polite"></section>
+</div>
+
+<section class="panel">
+  <h2>Porównanie klas laserów dla tej geometrii</h2>
+  <p class="hint" style="margin-top:-.3rem">Wiersz podświetlony: rekomendacja przy wybranym priorytecie. Czas na element = liczba otworów × (wiercenie + przeskok). Koszt usługi liczony przy orientacyjnej stawce godzinowej klasy maszyny.</p>
+  <div class="scroll"><table id="cmp"></table></div>
+</section>
+
+<div class="two">
+  <section class="panel">
+    <h2>Pochłanianie światła przez metal</h2>
+    <div id="absChart"></div>
+    <p class="hint">Absorpcja A = 1 − R przy padaniu prostopadłym, gładka powierzchnia w temperaturze pokojowej (Palik). Miedź odbija ok. 97 % podczerwieni 1064 nm i tylko ok. 60 % zieleni 532 nm, więc zielony laser wprowadza do miedzi ok. 10× więcej energii z impulsu. Dla impulsów ps i fs różnica jest mniejsza, bo absorpcja staje się nieliniowa, ale progi ablacji i stabilność procesu nadal przemawiają za krótszą falą.</p>
+  </section>
+  <section class="panel">
+    <h2>Przekrój otworu</h2>
+    <div id="xsec"></div>
+    <p class="hint">Rysunek w skali: laser wierci od strony wlotu (wnętrze), mniejszy wylot jest po stronie widocznej. Stożek zwęża się w kierunku propagacji wiązki, co przy wierceniu udarowym dzieje się samo.</p>
+  </section>
+</div>
+
+<section class="panel prose">
+  <h2>Jak to liczy</h2>
+  <h3>Geometria</h3>
+  <ul>
+    <li>Komórka układu: w linii i naprzemiennie p², heksagonalny p²·√3/2. Liczba otworów = powierzchnia / komórka.</li>
+    <li>Objętość otworu (stożek ścięty): V = π·t·(D₁² + D₁D₂ + D₂²)/12. Smukłość AR = t / Ø wylotu (to ona ogranicza wykonalność), kąt stożka = atan((Ø wlot − Ø wylot)/(2t)).</li>
+    <li>Widoczność: oko rozdziela ok. 1′ kątowej (2,9·10⁻⁴ rad). Wzór siatki przestaje być rozróżnialny od odległości p / 2,9·10⁻⁴, pojedynczy otwór od Ø/2,9·10⁻⁴. To granica dla wysokiego kontrastu; przy niskim kontraście (lampa wyłączona) wzór znika bliżej. Dokładniejszy wynik daje symulator z renderami.</li>
+  </ul>
+  <h3>Impulsy ultrakrótkie (ps, fs)</h3>
+  <ul>
+    <li>Głębokość ablacji na impuls: d = δ·ln(F₀/F<sub>th</sub>) (model logarytmiczny, Nolte 1997, Neuenschwander 2012). Wydajność objętościowa jest największa przy F₀ = e²·F<sub>th</sub> i wynosi 2δ/(e²·F<sub>th</sub>) [mm³/J]; jej odwrotność to energia właściwa w [J/mm³] w tabeli materiałów.</li>
+    <li>Próg dla innej długości fali: F<sub>th</sub>(λ) = F<sub>th</sub>(1030 nm) · (A₁₀₃₀/A<sub>λ</sub>)<sup>0,3</sup>. Wykładnik 0,3 to moja heurystyka (pomiary dla Cu dają ok. 1,5–2× niższy próg w zieleni niż w podczerwieni).</li>
+    <li>fs: próg ok. 0,75× progu ps, ta sama głębokość wnikania.</li>
+  </ul>
+  <h3>Impulsy nanosekundowe</h3>
+  <ul>
+    <li>Próg odparowania: F<sub>th</sub> ≈ ρ·c<sub>p</sub>·(T<sub>v</sub> − T₀)·√(α·τ) / A. Dla miedzi w 1064 nm wychodzi ~70 J/cm², w 532 nm ~6 J/cm².</li>
+    <li>Energia właściwa: (stopienie całości + odparowanie 30 % objętości) / (A<sub>wnęki</sub> · η), gdzie A<sub>wnęki</sub> = 1 − (1 − A)<sup>1+AR</sup> (wielokrotne odbicia w otworze), η = 0,35·(16/k)<sup>0,3</sup> (straty przez przewodzenie; miedź i aluminium tracą więcej ciepła).</li>
+  </ul>
+  <h3>Wspólne</h3>
+  <ul>
+    <li>Kara za głębokość (osłabienie wiązki w otworze, wyrzut materiału, plazma): ×(1 + (AR<sub>śr</sub>/4)<sup>1,5</sup>) dla ps/fs i ×(1 + (AR<sub>śr</sub>/8)<sup>1,5</sup>) dla ns, AR<sub>śr</sub> = t / Ø średnie.</li>
+    <li>Metoda: udarowa (percussion) przy stożku w naturalnym zakresie danej klasy; helikalna (z pochyleniem wiązki) przy otworze prostym lub odwrotnym, tylko ps/fs; trepanacja przy Ø wlotu &gt; 300 µm (wycina się tylko pierścień); spirala ze zmniejszanym promieniem, gdy stożek ma być większy niż naturalny.</li>
+    <li>Plamka (1/e²): udarowo ≈ 0,8·Ø wylotu, helikalnie i trepanacją ≈ Ø wylotu / 2,5, nie mniej niż minimum dla danej fali. Średnica wiązki D = 4·M²·λ·f / (π·d₀), głębia ostrości 2z<sub>R</sub> = 2π·w₀² / (M²·λ).</li>
+    <li>Energia impulsu E = F₀·π·w₀²/2, częstotliwość f = min(f<sub>max</sub>, P/E). Jeśli przy f<sub>max</sub> moc lasera nie byłaby wykorzystana, energia impulsu rośnie do P/f<sub>max</sub>, a wydajność spada zgodnie z ln²(F/F<sub>th</sub>)/F. Liczba impulsów na otwór = energia otworu / E.</li>
+    <li>Obiektyw: typoszereg F-theta 56–420 mm, wybierany tak, by średnica wiązki po rozszerzaczu była najbliżej 8 mm.</li>
+  </ul>
+  <h3>Czego nie jestem pewien</h3>
+  <ul>
+    <li><b>Czasy wiercenia</b> mają niepewność ok. 3× w każdą stronę. Model energetyczny nie uwzględnia ekranowania plazmą, osadzania materiału na ściankach, kształtu wylotu ani strategii (zmiana ogniska, gaz). Pierwsza próba u wykonawcy zweryfikuje to lepiej niż jakikolwiek model.</li>
+    <li><b>Progi ablacji i δ</b> podaję z pamięci literatury (wartości wieloimpulsowe, N ≈ 100); w publikacjach różnią się do 2× zależnie od stopu, powierzchni i definicji. Wartości dla aluminium są najmniej pewne.</li>
+    <li><b>Zależność od długości fali dla ps/fs</b> (wykładnik 0,3) jest heurystyką dopasowaną do kilku znanych mi pomiarów miedzi.</li>
+    <li><b>Ceny maszyn</b> to rzędy wielkości z ofert rynkowych 2024–2026 (kompletne stanowisko: źródło, skaner, oś Z, osłona, oprogramowanie), ±50 %. Stawki godzinowe usług podobnie.</li>
+    <li><b>Grat na wylocie</b>: wylot jest po stronie widocznej, a tam zbiera się grat i odpryski. Nawet przy ps zwykle trzeba lekkiej obróbki po wierceniu (szczotkowanie, elektropolerowanie, folia ochronna lub powłoka zdejmowalna). To ograniczenie technologii, nie modelu.</li>
+    <li>Nie liczę wiercenia wiązką elektronów (EBD) ani trawienia; to inne technologie z innymi ograniczeniami.</li>
+  </ul>
+</section>
+
+<section class="panel prose">
+  <h2>Stałe materiałowe i źródła</h2>
+  <div class="scroll"><table id="mtab"></table></div>
+  <ol class="hint" style="padding-left:18px">
+    <li>E. D. Palik (red.), <i>Handbook of Optical Constants of Solids</i>, Academic Press 1985; dane n, k przez refractiveindex.info. Absorpcja A = 1 − R przy padaniu prostopadłym. Stal 304 przyjęta jak żelazo/stal (brak spójnych danych dla stopu).</li>
+    <li>B. Neuenschwander i in., „Optimization of the volume ablation rate for metals at different laser pulse-durations from ps to fs”, Proc. SPIE 8243 (2012). Model d = δ·ln(F/F<sub>th</sub>), optimum przy e²·F<sub>th</sub>, rzędy wielkości δ i F<sub>th</sub> dla stali i miedzi.</li>
+    <li>P. T. Mannion i in., „The effect of damage accumulation behaviour on ablation thresholds and damage morphology in ultrafast laser micro-machining of common metals in air”, Appl. Surf. Sci. 233 (2004) 275–287. Progi fs i efekt inkubacji (spadek progu z liczbą impulsów).</li>
+    <li>S. Nolte i in., „Ablation of metals by ultrashort laser pulses”, J. Opt. Soc. Am. B 14 (1997) 2716. Dwa reżimy ablacji (optyczny i termiczny) dla miedzi.</li>
+    <li>B. N. Chichkov i in., „Femtosecond, picosecond and nanosecond laser ablation of solids”, Appl. Phys. A 63 (1996) 109–115. Porównanie reżimów ns/ps/fs, strefa wpływu ciepła.</li>
+    <li>C. Föhl, F. Dausinger, „High precision deep drilling with ultrashort pulses”, Proc. SPIE 5063 (2003). Wiercenie helikalne, kontrola stożka.</li>
+    <li>Własności cieplne (ρ, c<sub>p</sub>, k, T<sub>m</sub>, T<sub>v</sub>, ciepła przemian): typowe wartości katalogowe (ASM Handbook, MatWeb) dla temperatury pokojowej.</li>
+    <li>US 2011/0122560 A1: przykład geometrii mikroperforacji w aluminium 0,4–0,5 mm (otwory ok. 30/90 µm co ok. 200 µm).</li>
+  </ol>
+</section>
+
+<footer>Wersja 1.0, listopad 2026. Kalkulator napisany z pomocą Claude (Anthropic) w Claude Code. Jeden plik HTML, bez bibliotek zewnętrznych, bez śledzenia.</footer>
+</div>
+
+<script>
+'use strict';
+// ---------- dane ----------
+const T0 = 20;
+const MAT = {
+  ss: {name:'Stal nierdzewna 304', short:'SS 304', rho:7900, cp:500, k:16.2, Tm:1400, Tv:2860, Lm:2.7e5, Lv:6.1e6,
+       A:{1064:0.35, 532:0.42, 355:0.50}, Fth:0.08, delta:15, roughA:1.25},
+  cu: {name:'Miedź', short:'Cu', rho:8960, cp:385, k:390, Tm:1085, Tv:2562, Lm:2.05e5, Lv:4.73e6,
+       A:{1064:0.03, 532:0.40, 355:0.62}, Fth:0.25, delta:25, roughA:1.3},
+  al: {name:'Aluminium', short:'Al', rho:2700, cp:900, k:220, Tm:660, Tv:2470, Lm:3.97e5, Lv:1.09e7,
+       A:{1064:0.07, 532:0.08, 355:0.08}, Fth:0.15, delta:25, roughA:1.3}
+};
+// A: polerowana; Fth [J/cm²] wieloimpulsowy ps @1030 nm; delta [nm] efektywna głębokość ablacji ps.
+const LAS = [
+  {id:'ns_ir', name:'Fiber ns IR (MOPA)', lam:1064, band:'ir', regime:'ns', tau:20e-9, tauTxt:'10–200 ns (MOPA, nastawny)', P:50, Emax:1.0e-3, fmax:1e6, M2:1.3,
+   price:[10,35], rate:40, q:4, arMax:10, dMin:25, natTaper:[1.5,3.0], cls:'stacja galwo „znakowarka” z osią Z, laser włóknowy MOPA 20–100 W'},
+  {id:'ns_g', name:'ns zielony', lam:532, band:'g', regime:'ns', tau:15e-9, tauTxt:'5–30 ns (Q-switch)', P:20, Emax:0.4e-3, fmax:3e5, M2:1.2,
+   price:[40,100], rate:70, q:5, arMax:12, dMin:15, natTaper:[1.5,3.0], cls:'stanowisko mikroobróbki z laserem DPSS lub włóknowym 532 nm'},
+  {id:'ns_uv', name:'ns UV', lam:355, band:'uv', regime:'ns', tau:15e-9, tauTxt:'10–30 ns (Q-switch)', P:15, Emax:0.3e-3, fmax:3e5, M2:1.2,
+   price:[40,110], rate:80, q:5.5, arMax:14, dMin:10, natTaper:[1.4,2.8], cls:'stanowisko mikroobróbki UV (DPSS 355 nm)'},
+  {id:'ps_ir', name:'Pikosekundowy IR', lam:1030, band:'ir', regime:'ps', tau:10e-12, tauTxt:'1–15 ps', P:50, Emax:200e-6, fmax:2e6, M2:1.3,
+   price:[150,300], rate:120, q:8, arMax:20, dMin:15, natTaper:[1.2,2.2], cls:'przemysłowe stanowisko ps z galwo i opcjonalną głowicą helikalną'},
+  {id:'ps_g', name:'Pikosekundowy zielony', lam:515, band:'g', regime:'ps', tau:10e-12, tauTxt:'1–15 ps', P:25, Emax:100e-6, fmax:2e6, M2:1.3,
+   price:[180,350], rate:140, q:8.2, arMax:20, dMin:12, natTaper:[1.2,2.2], cls:'stanowisko ps z konwersją do 515/532 nm'},
+  {id:'fs_ir', name:'Femtosekundowy IR', lam:1030, band:'ir', regime:'fs', tau:0.4e-12, tauTxt:'0,2–0,9 ps', P:40, Emax:100e-6, fmax:2e6, M2:1.2,
+   price:[180,400], rate:150, q:8.4, arMax:25, dMin:10, natTaper:[1.1,2.0], cls:'stanowisko fs (Yb), galwo + głowica helikalna / precesyjna'},
+  {id:'fs_g', name:'Femtosekundowy zielony', lam:515, band:'g', regime:'fs', tau:0.4e-12, tauTxt:'0,2–0,9 ps', P:20, Emax:50e-6, fmax:2e6, M2:1.2,
+   price:[220,450], rate:170, q:8.5, arMax:25, dMin:8, natTaper:[1.1,2.0], cls:'stanowisko fs z konwersją do 515 nm'},
+  {id:'fs_uv', name:'Femtosekundowy UV', lam:343, band:'uv', regime:'fs', tau:0.4e-12, tauTxt:'0,2–0,9 ps', P:10, Emax:25e-6, fmax:1e6, M2:1.3,
+   price:[250,500], rate:190, q:8.5, arMax:25, dMin:6, natTaper:[1.1,2.0], cls:'stanowisko fs z konwersją do 343 nm'}
+];
+const BAND = {ir:{c:'var(--ir)', t:'podczerwień'}, g:{c:'var(--grn)', t:'zielony'}, uv:{c:'var(--uv)', t:'UV'}};
+const EYE = 2.909e-4; // 1 minuta kątowa w radianach
+
+// ---------- pomocnicze ----------
+const $ = id => document.getElementById(id);
+const nf = (x, d=0) => (isFinite(x) ? x.toLocaleString('pl-PL', {minimumFractionDigits:d, maximumFractionDigits:d}) : '–');
+function sig(x, n=2){ if(!isFinite(x)) return '–'; if(x===0) return '0'; const d = Math.max(0, n-1-Math.floor(Math.log10(Math.abs(x)))); return nf(x, Math.min(d,4)); }
+function fmtT(s){ if(!isFinite(s)) return '–'; if(s<1e-3) return sig(s*1e6)+' µs'; if(s<1) return sig(s*1e3)+' ms'; if(s<120) return sig(s)+' s'; if(s<7200) return sig(s/60)+' min'; return sig(s/3600)+' h'; }
+function fmtE(J){ if(J<1e-3) return sig(J*1e6)+' µJ'; if(J<1) return sig(J*1e3)+' mJ'; return sig(J)+' J'; }
+function absAt(m, lam, surf){
+  // interpolacja liniowa między 355, 532, 1064 nm
+  const pts = [[355,m.A[355]],[532,m.A[532]],[1064,m.A[1064]]];
+  let a;
+  if(lam<=355) a = pts[0][1]; else if(lam>=1064) a = pts[2][1];
+  else { const i = lam<=532 ? 0 : 1; const [x0,y0]=pts[i],[x1,y1]=pts[i+1]; a = y0 + (y1-y0)*(lam-x0)/(x1-x0); }
+  if(surf==='tech') a = Math.min(0.85, a*m.roughA);
+  return a;
+}
+
+// ---------- stan ----------
+const st = {shape:'cone', layout:'hex'};
+function segInit(id, key){
+  $(id).querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    st[key] = b.dataset.v; $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x===b)); if(key==='shape') syncShape(); calc();
+  }));
+}
+function setSeg(id, key, v){ st[key]=v; $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.v===v)); }
+function syncShape(){ const s = st.shape==='straight'; $('din').disabled = s; if(s) $('din').value = $('dout').value; }
+
+const PRESETS = {
+  sym:   {mat:'ss', t:0.5, dout:100, din:250, pitch:500, layout:'hex', area:300, shape:'cone'},
+  apple: {mat:'al', t:0.4, dout:30, din:90, pitch:200, layout:'hex', area:20, shape:'cone'},
+  cu:    {mat:'cu', t:0.5, dout:80, din:200, pitch:400, layout:'hex', area:300, shape:'cone'}
+};
+
+// ---------- model ----------
+function geometry(i){
+  const tUm = i.t*1000, D2 = i.dout, D1 = i.shape==='straight' ? i.dout : Math.max(i.din, i.dout);
+  const cell = i.layout==='hex' ? i.pitch*i.pitch*Math.sqrt(3)/2 : i.pitch*i.pitch; // µm²
+  const N = i.area*1e8 / cell;
+  const V = Math.PI*tUm*(D1*D1 + D1*D2 + D2*D2)/12; // µm³
+  const openOut = Math.PI*D2*D2/4/cell, openIn = Math.PI*D1*D1/4/cell;
+  // najmniejszy odstęp sąsiadów: w linii i heks = p; naprzemiennie (rząd co p, przesunięcie p/2) = p·√1.25
+  const nn = i.layout==='stag' ? i.pitch*Math.sqrt(1.25) : i.pitch;
+  const bridge = nn - D1;
+  const taperDeg = Math.atan((D1-D2)/(2*tUm))*180/Math.PI;
+  return {tUm, D1, D2, cell, N, V, openOut, openIn, bridge, nn, taperDeg, ratio:D1/D2,
+          AR:tUm/D2, ARm:tUm/((D1+D2)/2), visPitch:i.pitch*1e-6/EYE, visHole:D2*1e-6/EYE};
+}
+
+function evalLaser(L, m, g, i){
+  const A = absAt(m, L.lam, i.surf);
+  const lam = L.lam*1e-9;
+  const flags = [];
+  // --- metoda ---
+  let method, mFactor = 1;
+  const [nMin, nMax] = L.natTaper;
+  const us = L.regime!=='ns';
+  if(g.D1 > 300){ method = 'trepanacja'; }
+  else if(g.ratio < nMin){ method = us ? 'helikalna' : 'trepanacja'; mFactor = us ? 1.3 : 1.5; }
+  else if(g.ratio > nMax){ method = 'spirala stożkowa'; mFactor = 1.25; }
+  else method = 'udarowa';
+  // --- plamka i optyka ---
+  const dMinOpt = 4*L.M2*lam*0.056/(Math.PI*12e-3)*1e6; // µm, f = 56 mm, wiązka 12 mm
+  let d0 = method==='udarowa' ? 0.8*g.D2 : g.D2/2.5;
+  d0 = Math.max(d0, dMinOpt, 4);
+  const w0 = d0/2*1e-6;
+  // dobór obiektywu F-theta z typoszeregu: średnica wiązki najbliżej 8 mm (rozszerzacz 1–5×)
+  let fFoc = 56, Db = 0;
+  [56,100,160,254,330,420].forEach(f => { const D = 4*L.M2*lam*f*1e-3/(Math.PI*d0*1e-6)*1e3; if(!Db || Math.abs(D-8) < Math.abs(Db-8)) { fFoc = f; Db = D; } });
+  const zR = Math.PI*w0*w0/(L.M2*lam); // m
+  // --- progi i energia właściwa ---
+  let Fth, w; // J/cm², J/mm³
+  if(us){
+    const Air = absAt(m, 1030, i.surf);
+    Fth = m.Fth * Math.pow(Air/A, 0.3) * (L.regime==='fs' ? 0.75 : 1);
+    const Fth_si = Fth*1e4, d = m.delta*1e-9;
+    w = 1/((2*d/(Math.E*Math.E*Fth_si))*1e9); // J/mm³ przy optimum
+    const r = i.rUS; const eff = (Math.log(r)**2/r)/(4/(Math.E*Math.E)); // względem optimum
+    w = w/Math.max(eff, 0.05);
+    w *= 1 + Math.pow(g.ARm/4, 1.5);
+  } else {
+    const alpha = m.k/(m.rho*m.cp);
+    Fth = m.rho*m.cp*(m.Tv-T0)*Math.sqrt(alpha*L.tau)/A/1e4; // J/cm²
+    const eMelt = m.rho*(m.cp*(m.Tm-T0)+m.Lm), eVap = m.rho*(m.cp*(m.Tv-m.Tm)+m.Lv);
+    const e = (eMelt + 0.3*eVap)/1e9; // J/mm³
+    const Acav = 1 - Math.pow(1-A, 1+g.ARm);
+    const eta = 0.35*Math.pow(16/m.k, 0.3);
+    w = e/(Acav*eta);
+    w *= 1 + Math.pow(g.ARm/8, 1.5);
+  }
+  const r = us ? i.rUS : i.rNS;
+  let F0 = r*Fth; // J/cm²
+  let Ep = F0*1e4*Math.PI*w0*w0/2;
+  // jeśli przy maks. częstotliwości wiercenia moc nie jest wykorzystana, podnieś energię impulsu (wyższa fluencja)
+  const fCap = Math.min(L.fmax, i.fdr);
+  if(L.P/Ep > fCap){ Ep = L.P/fCap; F0 = Ep/(Math.PI*w0*w0/2)/1e4; }
+  if(Ep > L.Emax){ flags.push(['w', `Potrzebna energia impulsu ${fmtE(Ep)} przekracza typowe ${fmtE(L.Emax)} tej klasy; przyjęto ${fmtE(L.Emax)}, fluencja spada do ${sig(L.Emax/(Math.PI*w0*w0/2)/1e4)} J/cm².`]); Ep = L.Emax; F0 = Ep/(Math.PI*w0*w0/2)/1e4; }
+  const frep = Math.min(fCap, L.P/Ep);
+  // wydajność ablacji przy faktycznej fluencji (model logarytmiczny dla ps/fs, liniowo-progowy dla ns)
+  const rr = F0/Fth;
+  const effUS = rf => (Math.log(rf)**2/rf)/(4/(Math.E*Math.E));
+  if(us) w *= effUS(r)/Math.max(effUS(rr), 0.02);
+  else w *= ((r-1)/r)/Math.max((rr-1)/rr, 0.05);
+  const Pused = Ep*frep;
+  // --- objętość ---
+  let Vmm = g.V*1e-9;
+  if(method==='trepanacja'){ const kerf = 1.5*d0; const Vring = Math.PI*((g.D1+g.D2)/2)*kerf*g.tUm*1e-9; Vmm = Math.min(Vmm, Vring); }
+  const Ehole = Vmm*w*mFactor;
+  const Np = Ehole/Ep;
+  const tHole = Np/frep;
+  const tPart = g.N*(tHole + i.jump*1e-3);
+  const cost = tPart/3600*L.rate;
+  // --- wykonalność ---
+  let feasible = true;
+  const arMax = (m===MAT.cu && L.id==='ns_ir') ? 5 : L.arMax;
+  if(g.AR > arMax){ feasible = false; flags.push(['b', `Smukłość t/Ø wylotu = ${sig(g.AR)} przekracza ok. ${arMax} osiągalne tą klasą lasera.`]); }
+  if(g.D2 < L.dMin){ feasible = false; flags.push(['b', `Ø wylotu ${g.D2} µm poniżej ok. ${L.dMin} µm, które ta klasa robi powtarzalnie w tej grubości.`]); }
+  if(F0 < 1.3*Fth){ feasible = false; flags.push(['b', 'Fluencja ledwo przekracza próg, wiercenie byłoby niestabilne lub niemożliwe.']); }
+  if(m===MAT.cu && L.lam>1000 && L.regime==='ns') flags.push(['b','Miedź odbija ~97 % wiązki 1064 nm: niestabilne sprzężenie, ryzyko odbicia do lasera (potrzebny izolator), duża strefa przetopienia.']);
+  if(L.regime==='ns' && m===MAT.al) flags.push(['w','Aluminium przy ns: zakrzepły nawis i tlenek na wylocie; wymaga gazu osłonowego i obróbki po wierceniu.']);
+  if(2*zR*1e3 < g.tUm*0.8) flags.push(['i', `Głębia ostrości ${sig(2*zR*1e6)} µm jest mniejsza niż grubość; potrzebne przesuwanie ogniska w trakcie wiercenia (oś Z albo moduł dynamicznego ogniska).`]);
+  // akumulacja ciepła: czas dyfuzji na średnicy plamki
+  const alpha = m.k/(m.rho*m.cp), tDiff = (d0*1e-6)**2/(4*alpha);
+  if(us && frep*tDiff > 1) flags.push(['w', `Przy ${sig(frep/1e3)} kHz impulsy przychodzą szybciej niż ciepło ucieka z plamki (${sig(tDiff*1e6)} µs): akumulacja ciepła, trzeba obniżyć częstotliwość lub użyć burstów.`]);
+  const haz = us ? (L.regime==='fs' ? '< 0,5 µm' : '≈ 0,5–1 µm') : `≈ ${sig(2*Math.sqrt(alpha*L.tau)*1e6)} µm na impuls; przetop 2–10 µm`;
+  const burr = us ? 'mały, nanocząstki i lekki osad przy wylocie' : (m===MAT.ss ? 'zakrzepły grat na wylocie 5–20 µm' : 'grat i nawis na wylocie, nieregularny brzeg');
+  // osiągalny stożek
+  const taperTxt = method==='helikalna' ? 'prosty lub odwrotny (pochylenie wiązki)' : `naturalnie Ø wlot/Ø wylot ≈ ${nf(nMin,1)}–${nf(nMax,1)}`;
+  return {L, mat:m, A, method, d0, fFoc, Db, zR, Fth, F0, r:F0/Fth, Ep, frep, Pused, Ehole, Np, tHole, tPart, cost, feasible, flags, haz, burr, taperTxt, w, dMinOpt, arMax, Vmm};
+}
+
+function rank(res, prio){
+  const ok = res.filter(r => r.feasible);
+  if(!ok.length) return null;
+  const tMin = Math.min(...ok.map(r => r.tPart)), pMin = Math.min(...ok.map(r => (r.L.price[0]+r.L.price[1])/2));
+  ok.forEach(r => {
+    const speed = Math.max(0, 1 + Math.log10(tMin/r.tPart)/2);        // 1 dla najszybszego, 0 przy 100× wolniej
+    const price = Math.max(0, 1 + Math.log10(pMin/((r.L.price[0]+r.L.price[1])/2))/1.5); // 1 najtańsza, 0 przy ~30× droższej
+    let q = r.L.q/10;
+    if(r.mat===MAT.cu && r.L.band!=='ir') q += 0.05;  // miedź: krótsza fala stabilniej sprzęga się z materiałem
+    r.flags.forEach(f => { if(f[0]==='b') q -= 0.25; else if(f[0]==='w') q -= 0.08; });
+    r.score = prio*q + (1-prio)*(0.5*speed + 0.5*price);
+  });
+  ok.sort((a,b) => b.score - a.score);
+  return ok[0];
+}
+
+// ---------- rysunki ----------
+function absChart(m){
+  const W=460,H=200,ml=40,mr=10,mt=14,mb=34, xs=['355','532','1064'], mats=['cu','al','ss'];
+  const cols = {cu:'var(--ir)', al:'var(--steel)', ss:'var(--acc)'};
+  const bw = (W-ml-mr)/3, bar = bw/4.2;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Absorpcja w funkcji długości fali"><g font-size="11">`;
+  [0,0.25,0.5,0.75].forEach(v => { const y = mt+(H-mt-mb)*(1-v/0.75); s += `<line x1="${ml}" x2="${W-mr}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${ml-6}" y="${y+4}" text-anchor="end">${Math.round(v*100)} %</text>`; });
+  xs.forEach((x,k) => {
+    const cx = ml + bw*k + bw/2;
+    mats.forEach((mk,j) => {
+      const a = MAT[mk].A[x], h = (H-mt-mb)*a/0.75, X = cx + (j-1.5)*bar + bar*0.1;
+      const sel = MAT[mk]===m;
+      s += `<rect x="${X}" y="${H-mb-h}" width="${bar*0.85}" height="${h}" fill="${cols[mk]}" opacity="${sel?1:0.45}"/>`;
+      s += `<text x="${X+bar*0.42}" y="${H-mb-h-4}" text-anchor="middle" font-size="9.5">${Math.round(a*100)}</text>`;
+    });
+    s += `<text x="${cx}" y="${H-mb+16}" text-anchor="middle">${x} nm</text>`;
+  });
+  s += `</g></svg>`;
+  s += `<div class="hint" style="display:flex;gap:14px;flex-wrap:wrap">${mats.map(mk=>`<span><span style="display:inline-block;width:10px;height:10px;background:${cols[mk]};border-radius:2px"></span> ${MAT[mk].short}</span>`).join('')}<span>(pełny kolor: wybrany materiał)</span></div>`;
+  return s;
+}
+function xsec(g, best){
+  const W=460,H=210, pad=34;
+  const sc = Math.min((W-2*pad)/(g.D1*2.4), (H-60)/g.tUm), cx=W/2, th = g.tUm*sc, top = (H-th)/2;
+  const r1 = g.D1/2*sc, r2 = g.D2/2*sc;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Przekrój otworu w skali"><g font-size="11">`;
+  s += `<path d="M${pad} ${top} H${cx-r1} L${cx-r2} ${top+th} H${pad} Z" fill="var(--steel)"/>`;
+  s += `<path d="M${W-pad} ${top} H${cx+r1} L${cx+r2} ${top+th} H${W-pad} Z" fill="var(--steel)"/>`;
+  if(best){ const c = BAND[best.L.band].c, wz = best.d0/2*sc;
+    s += `<path d="M${cx-wz*3} ${top-30} L${cx-wz} ${top} L${cx-wz} ${top+th} M${cx+wz*3} ${top-30} L${cx+wz} ${top} L${cx+wz} ${top+th}" stroke="${c}" fill="none" stroke-dasharray="3 3"/>`; }
+  s += `<text x="${pad}" y="${top-6}">wlot (laser, wnętrze) Ø ${nf(g.D1)} µm</text>`;
+  s += `<text x="${pad}" y="${top+th+16}">wylot (strona widoczna) Ø ${nf(g.D2)} µm</text>`;
+  s += `<text x="${W-pad}" y="${top+th/2+4}" text-anchor="end">t = ${nf(g.tUm)} µm</text>`;
+  s += `<text x="${W-pad}" y="${top+th+16}" text-anchor="end">kąt połówkowy ${nf(g.taperDeg,1)}°</text>`;
+  s += `</g></svg>`;
+  return s;
+}
+
+// ---------- render ----------
+function read(){
+  return {mat:$('mat').value, t:+$('t').value, surf:$('surf').value, dout:+$('dout').value,
+    din: st.shape==='straight' ? +$('dout').value : +$('din').value, pitch:+$('pitch').value, area:+$('area').value,
+    layout:st.layout, shape:st.shape, prio:+$('prio').value/100, rUS:+$('rUS').value, rNS:+$('rNS').value, fdr:+$('fdr').value*1e3, jump:+$('jump').value};
+}
+function calc(){
+  const i = read(); const m = MAT[i.mat]; const g = geometry(i);
+  $('prioTxt').textContent = i.prio<0.35 ? '(czas i koszt)' : i.prio>0.65 ? '(jakość)' : '(równowaga)';
+  const res = LAS.map(L => evalLaser(L, m, g, i));
+  const best = rank(res, i.prio);
+  const gflags = [];
+  if(g.bridge < 30) gflags.push(['b', `Między wlotami zostaje ${nf(g.bridge)} µm materiału (rozstaw najbliższych sąsiadów ${nf(g.nn)} µm); poniżej ok. 30 µm otwory się zleją.`]);
+  else if(g.bridge < 60) gflags.push(['w', `Między wlotami zostaje ${nf(g.bridge)} µm materiału: mało, ryzyko przegrzania mostka i odkształcenia blachy.`]);
+  if(g.openIn > 0.5) gflags.push(['w', `Prześwit po stronie wlotu ${nf(g.openIn*100)} %: blacha będzie wiotka.`]);
+  const visTxt = g.visPitch <= 1.0 ? ['o', `Siatka otworów jest poniżej rozdzielczości oka już od ${nf(g.visPitch,2)} m (wysoki kontrast), pojedynczy otwór od ${nf(g.visHole,2)} m.`]
+                                   : ['i', `Przy wysokim kontraście wzór siatki rozróżnia się do ok. ${nf(g.visPitch,1)} m, pojedynczy otwór do ${nf(g.visHole,2)} m. Przy wyłączonym świetle kontrast jest niski i granica jest bliżej; rozstrzyga symulator z renderami.`];
+  gflags.push(visTxt);
+  // energia wprowadzona (górna granica nagrzania)
+  let heat = '';
+  if(best){ const Etot = g.N*best.Ehole*(best.L.regime==='ns' ? 0.5 : 0.3); const mass = m.rho*i.area*1e-4*i.t*1e-3; const dT = Etot/(mass*m.cp);
+    if(dT > 150) gflags.push(['w', `W blasze zostaje rzędu ${sig(Etot/1e3)} kJ ciepła (szacunek: ${best.L.regime==='ns'?'50':'30'} % energii otworów; bez chłodzenia wystarczyłoby na ΔT ≈ ${nf(dT)} K). Wiercić w rozproszonej kolejności, z przerwami lub na chłodzonym stole, bo cienka blacha się wypaczy.`]); }
+
+  let h = '';
+  if(!best){
+    h = `<div class="reco-head"><h2>Żadna klasa nie spełnia warunków</h2></div><div class="flags">${gflags.map(f=>`<div class="flag ${f[0]}">${f[1]}</div>`).join('')}<div class="flag b">Zwiększ Ø wylotu albo zmniejsz grubość: smukłość t/Ø = ${sig(g.AR)}.</div></div>`;
+  } else {
+    const L = best.L, b = BAND[L.band];
+    const why = [];
+    why.push(`Długość fali ${L.lam} nm: ${m.short} pochłania tu ${nf(best.A*100)} % (szlif/walcowana: ${$('surf').value==='tech'?'uwzględnione':'nie'}).` + (m===MAT.cu ? ` W 1064 nm tylko ${nf(absAt(m,1064,i.surf)*100)} %, w 532 nm ${nf(absAt(m,532,i.surf)*100)} %.` : ''));
+    why.push(L.regime==='ns' ? `Impulsy ns topią i wyrzucają materiał: najszybciej, najtaniej, ale z przetopem i gratem.` : `Impulsy ${L.regime==='ps'?'pikosekundowe':'femtosekundowe'} są krótsze niż czas przekazania ciepła do sieci (kilka ps), więc materiał odparowuje prawie bez przetopu.`);
+    why.push(`Metoda ${best.method}: stosunek Ø wlot/Ø wylot = ${nf(g.ratio,1)}, ${best.taperTxt}.`);
+    const alt = res.filter(r => r.feasible && r!==best).sort((a,b)=>b.score-a.score)[0];
+    h += `<div class="reco-head"><span class="chip" style="color:${b.c}"><span class="dot"></span>${L.lam} nm · ${b.t}</span><h2>${L.name}</h2></div>`;
+    h += `<p style="margin:0;color:var(--mut)">${L.cls}. Orientacyjnie <b class="num">${L.price[0]}–${L.price[1]} tys. €</b> za kompletne stanowisko.${alt ? ` Druga opcja: ${alt.L.name} (${fmtT(alt.tPart)} na element).` : ''}</p>`;
+    h += `<div class="kv">
+      <div><b>Długość fali</b><span>${L.lam} nm</span><small>absorpcja ${nf(best.A*100)} %</small></div>
+      <div><b>Czas impulsu</b><span>${L.regime==='ns'? sig(L.tau*1e9)+' ns' : sig(L.tau*1e12)+' ps'}</span><small>zakres klasy: ${L.tauTxt}</small></div>
+      <div><b>Energia impulsu</b><span>${fmtE(best.Ep)}</span><small>przy ${sig(best.frep/1e3)} kHz, ${sig(best.Pused)} W średnio</small></div>
+      <div><b>Fluencja szczytowa</b><span>${sig(best.F0)} J/cm²</span><small>${sig(best.r)}× próg ${sig(best.Fth)} J/cm²</small></div>
+      <div><b>Metoda wiercenia</b><span>${best.method}</span><small>${best.taperTxt}</small></div>
+      <div><b>Plamka (1/e²)</b><span>${sig(best.d0)} µm</span><small>F-theta ${best.fFoc} mm, wiązka Ø ${sig(best.Db)} mm, M² ${L.M2}; głębia ostrości ${sig(2*best.zR*1e6)} µm</small></div>
+      <div><b>Impulsy na otwór</b><span>${sig(best.Np)}</span><small>${fmtE(best.Ehole)} na otwór (V = ${sig(best.Vmm*1e3)}·10⁻³ mm³)</small></div>
+      <div><b>Czas na otwór</b><span>${fmtT(best.tHole)}</span><small>+ ${i.jump} ms przeskoku</small></div>
+      <div><b>Czas na element</b><span>${fmtT(best.tPart)}</span><small>${nf(g.N)} otworów; usługa ≈ ${nf(best.cost)} € przy ${L.rate} €/h</small></div>
+      <div><b>Smukłość, stożek</b><span>${sig(g.AR)} · ${nf(g.taperDeg,1)}°</span><small>t/Ø wylotu (limit klasy ≈ ${best.arMax}); kąt połówkowy</small></div>
+      <div><b>Strefa wpływu ciepła</b><span>${best.haz}</span><small>grat: ${best.burr}</small></div>
+      <div><b>Geometria</b><span>${nf(g.openOut*100,2)} % prześwitu</span><small>po stronie wylotu; mostek przy wlocie ${nf(g.bridge)} µm</small></div>
+    </div>`;
+    h += `<div><h3 style="margin-top:0">Dlaczego</h3><ul class="why">${why.map(x=>`<li>${x}</li>`).join('')}</ul></div>`;
+    const fl = gflags.concat(best.flags);
+    h += `<div><h3 style="margin-top:0">Ryzyka i uwagi</h3><div class="flags">${fl.map(f=>`<div class="flag ${f[0]}">${f[1]}</div>`).join('')}<div class="flag i">Grat i odpryski zbierają się na wylocie, czyli po stronie widocznej. Zaplanuj obróbkę po wierceniu (szczotkowanie, elektropolerowanie) albo powłokę ochronną zdejmowaną po procesie.</div></div></div>`;
+  }
+  $('out').innerHTML = h;
+
+  // tabela porównawcza
+  let t = `<thead><tr><th>Klasa</th><th class="n">λ [nm]</th><th>τ</th><th>Metoda</th><th class="n">Plamka [µm]</th><th class="n">E impulsu</th><th class="n">F/F<sub>th</sub></th><th class="n">Impulsy/otwór</th><th class="n">Czas/otwór</th><th class="n">Czas/element</th><th class="n">Usługa [€]</th><th class="n">Maszyna [tys. €]</th><th>Jakość</th><th>Uwagi</th></tr></thead><tbody>`;
+  res.forEach(r => {
+    const cls = r===best ? 'best' : (!r.feasible ? 'no' : '');
+    const note = r.feasible ? (r.flags.filter(f=>f[0]!=='i').map(f=>f[1].split(':')[0].split(';')[0]).slice(0,1).join('') || '–') : r.flags.filter(f=>f[0]==='b').map(f=>f[1]).slice(0,1).join('');
+    t += `<tr class="${cls}"><td><span style="color:${BAND[r.L.band].c}">●</span> ${r.L.name}</td><td class="n">${r.L.lam}</td><td>${r.L.regime==='ns'? sig(r.L.tau*1e9)+' ns' : sig(r.L.tau*1e12)+' ps'}</td><td>${r.method}</td>
+      <td class="n">${sig(r.d0)}</td><td class="n">${fmtE(r.Ep)}</td><td class="n">${sig(r.r)}</td><td class="n">${sig(r.Np)}</td><td class="n">${fmtT(r.tHole)}</td><td class="n">${r.feasible?fmtT(r.tPart):'–'}</td><td class="n">${r.feasible?nf(r.cost):'–'}</td>
+      <td class="n">${r.L.price[0]}–${r.L.price[1]}</td><td><span class="bar" style="width:${r.L.q*5}px"></span></td><td class="wrap">${note}</td></tr>`;
+  });
+  $('cmp').innerHTML = t + '</tbody>';
+  $('absChart').innerHTML = absChart(m);
+  $('xsec').innerHTML = xsec(g, best);
+}
+
+function matTable(){
+  let t = `<thead><tr><th>Wielkość</th>${Object.values(MAT).map(m=>`<th class="n">${m.short}</th>`).join('')}<th>Uwagi</th></tr></thead><tbody>`;
+  const rows = [
+    ['Gęstość ρ [kg/m³]', m=>nf(m.rho), ''],
+    ['Ciepło właściwe c<sub>p</sub> [J/kg·K]', m=>nf(m.cp), ''],
+    ['Przewodność k [W/m·K]', m=>nf(m.k), 'Al: między czystym (237) a stopem 5xxx (~130)'],
+    ['Dyfuzyjność α [mm²/s]', m=>sig(m.k/(m.rho*m.cp)*1e6), 'k/(ρ·c<sub>p</sub>)'],
+    ['T topnienia / wrzenia [°C]', m=>`${nf(m.Tm)} / ${nf(m.Tv)}`, 'stal: solidus, wrzenie jak Fe'],
+    ['Absorpcja 355 / 532 / 1064 nm [%]', m=>`${Math.round(m.A[355]*100)} / ${Math.round(m.A[532]*100)} / ${Math.round(m.A[1064]*100)}`, 'polerowana; szlif/walcowana × współczynnik'],
+    ['Współczynnik szorstkości A', m=>nf(m.roughA,2), 'założenie'],
+    ['F<sub>th</sub> ps @1030 nm [J/cm²]', m=>nf(m.Fth,2), 'wieloimpulsowy, ±2×'],
+    ['δ (ps) [nm]', m=>nf(m.delta), 'efektywna głębokość ablacji'],
+    ['Energia właściwa ps, optimum [J/mm³]', m=>nf(1/((2*m.delta*1e-9/(Math.E**2*m.Fth*1e4))*1e9)), '= e²·F<sub>th</sub>/(2δ)']
+  ];
+  rows.forEach(r => { t += `<tr><td>${r[0]}</td>${Object.values(MAT).map(m=>`<td class="n">${r[1](m)}</td>`).join('')}<td class="wrap hint">${r[2]}</td></tr>`; });
+  $('mtab').innerHTML = t + '</tbody>';
+}
+
+// ---------- start ----------
+segInit('shape','shape'); segInit('layout','layout');
+document.querySelectorAll('#f input, #f select').forEach(el => el.addEventListener('input', () => { if(el.id==='dout' && st.shape==='straight') $('din').value = el.value; calc(); }));
+document.querySelectorAll('.presets button').forEach(b => b.addEventListener('click', () => {
+  const p = PRESETS[b.dataset.p];
+  $('mat').value = p.mat; $('t').value = p.t; $('dout').value = p.dout; $('din').value = p.din; $('pitch').value = p.pitch; $('area').value = p.area;
+  setSeg('layout','layout',p.layout); setSeg('shape','shape',p.shape); syncShape(); calc();
+}));
+matTable(); calc();
+</script>
+</body>
+</html>

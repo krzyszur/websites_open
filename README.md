@@ -9,6 +9,7 @@
 | Project | Description (EN) | Opis (PL) |
 |---|---|---|
 | [`gabinet/`](gabinet/) | 3D layout planner for a small study + guest room: 15 layouts, day/night mode, collision and passage checks. | Planer 3D małego gabinetu z pokojem gościnnym: 15 układów, tryb dzień/noc, kontrola kolizji i przejść. |
+| [`mikroperforacja-laser/`](mikroperforacja-laser/) | Laser micro-perforation calculator for SS 304, Cu and Al sheet: wavelength, pulse duration and energy, drilling method, time and machine class. | Kalkulator mikroperforacji laserowej blach SS 304, Cu i Al: długość fali, czas i energia impulsu, metoda wiercenia, czas i klasa maszyny. |
 
 ## Structure / Struktura
 
