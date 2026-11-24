@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Planowanie eksperymentów (DoE) na przykładzie mikrootworów w blasze 304</title>
+<style>
+:root{--fg:#1b2430;--muted:#5b6675;--bg:#f4f6f9;--card:#fff;--bd:#d9dfe7;--acc:#2563eb;--acc2:#d97706;--ok:#059669;--bad:#dc2626;--grid:rgba(0,0,0,.09);--soft:#eef2f8}
+@media (prefers-color-scheme:dark){:root{--fg:#e6eaf0;--muted:#9aa6b5;--bg:#0f1318;--card:#181e26;--bd:#2c3542;--acc:#60a5fa;--acc2:#fbbf24;--ok:#34d399;--bad:#f87171;--grid:rgba(255,255,255,.12);--soft:#1f2732}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:20px 16px 8px;max-width:920px;margin:0 auto}
+h1{font-size:1.55rem;line-height:1.25;margin:0 0 6px}
+.lead{color:var(--muted);margin:0 0 10px}
+nav{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--bd);padding:8px 12px;display:flex;gap:8px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+nav a{flex:0 0 auto;padding:6px 12px;border:1px solid var(--bd);border-radius:999px;color:var(--fg);text-decoration:none;background:var(--card);font-size:.9rem}
+nav a:hover,nav a:focus{border-color:var(--acc);outline:none}
+main{max-width:920px;margin:0 auto;padding:8px 12px 60px}
+section{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin:18px 0;scroll-margin-top:56px}
+h2{font-size:1.25rem;margin:0 0 8px;display:flex;gap:10px;align-items:baseline}
+h2 .nr{background:var(--acc);color:#fff;border-radius:8px;padding:0 9px;font-size:1rem;line-height:1.7}
+h3{font-size:1.02rem;margin:14px 0 6px}
+p{margin:6px 0}
+.intuicja{border-left:4px solid var(--acc);padding:2px 0 2px 12px;margin:8px 0 14px}
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px 18px;margin:10px 0}
+.ctl label{display:flex;flex-direction:column;gap:2px;font-size:.9rem;color:var(--muted)}
+.ctl label b{color:var(--fg);font-variant-numeric:tabular-nums}
+.ctl input[type=range]{width:100%;height:32px;accent-color:var(--acc)}
+.ctl select,.ctl button,.btn{font:inherit;font-size:.95rem;padding:8px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--soft);color:var(--fg);min-height:40px}
+.ctl button,.btn{cursor:pointer;background:var(--acc);color:#fff;border-color:var(--acc)}
+.ctl button.sec{background:var(--soft);color:var(--fg);border-color:var(--bd)}
+.plot{width:100%;min-height:300px}
+.plot.tall{min-height:360px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:720px){.grid2{grid-template-columns:1fr}h1{font-size:1.3rem}section{padding:12px}.plot.tall{min-height:400px}}
+.wynik{background:var(--soft);border-radius:10px;padding:10px 12px;margin:10px 0;border:1px solid var(--bd)}
+.wynik b.t{color:var(--acc)}
+details.pytanie{border:1px dashed var(--bd);border-radius:10px;padding:8px 12px;margin:10px 0}
+details summary{cursor:pointer;font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--bd);padding:5px 6px;text-align:left}
+th{color:var(--muted);font-weight:600}
+.scroll{overflow-x:auto}
+.kpi{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.kpi div{background:var(--soft);border:1px solid var(--bd);border-radius:10px;padding:6px 10px;font-size:.88rem}
+.kpi b{display:block;font-size:1.1rem;font-variant-numeric:tabular-nums}
+.tak{color:var(--ok);font-weight:600}.nie{color:var(--bad);font-weight:600}
+.note{color:var(--muted);font-size:.86rem}
+ol.kroki li{margin:6px 0}
+dl dt{font-weight:700;margin-top:8px}dl dd{margin:0 0 4px 0;color:var(--muted)}
+code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:.9em}
+footer{max-width:920px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font-size:.85rem}
+.spin{color:var(--muted);font-style:italic}
+</style>
+</head>
+<body>
+<header>
+<h1>Planowanie eksperymentów (DoE) i analiza wrażliwości</h1>
+<p class="lead">Jeden przykład od początku do końca: blacha ze stali 304 (0,4–0,5 mm) z mikrootworami wierconymi laserem. Światło lampy ma przechodzić przez otwory, a z odległości 1 m samych otworów nie ma być widać. Każdy wykres liczy się w Twojej przeglądarce na prawdziwych wynikach symulacji z projektu.</p>
+<p class="note" id="daneInfo"></p>
+</header>
+<nav>
+<a href="#r1">1 Problem</a><a href="#r2">2 Bezwymiarowe</a><a href="#r3">3 Plan punktów</a><a href="#r4">4 Przesiewanie</a><a href="#r5">5 Dopasowanie</a><a href="#r6">6 Model GP</a><a href="#r7">7 Obszar pożądany</a><a href="#r8">8 Adaptacyjnie</a><a href="#sciaga">Ściąga</a><a href="#slownik">Słowniczek</a>
+</nav>
+<main>
+
+<section id="r1">
+<h2><span class="nr">1</span>Problem: wejścia, wyjścia, ograniczenia</h2>
+<p class="intuicja">Każdy render to minuty pracy komputera, a zmiennych jest kilka. Gdybyś sprawdzał każdą wartość każdej zmiennej z każdą, liczba przypadków rosłaby jak L<sup>d</sup> (L poziomów, d zmiennych), czyli wykładniczo. Planowanie doświadczeń zaczyna się od zapisania trzech list: co zmieniamy (wejścia z zakresami), co mierzymy (wyjścia) i czego nie wolno przekroczyć (ograniczenia). Dopiero wtedy wiadomo, ile punktów naprawdę potrzeba.</p>
+<div class="scroll"><table>
+<tr><th>Wejścia</th><th>Zakres</th><th>Jednostka</th><th>Wyjścia</th><th>Jednostka</th></tr>
+<tr><td>Ø wylotu (od strony widza)</td><td>30–400</td><td>µm</td><td>τ0: światło na wprost</td><td>%</td></tr>
+<tr><td>Stożek = Ø wlotu / Ø wylotu</td><td>1–4</td><td>–</td><td>τ45: światło pod 45°</td><td>%</td></tr>
+<tr><td>Rozstaw otworów</td><td>150–1600</td><td>µm</td><td>D_niewid: odległość, od której otworów nie widać</td><td>m</td></tr>
+<tr><td>Grubość blachy</td><td>0,4–0,5</td><td>mm</td><td>Sztywność względem litej blachy</td><td>%</td></tr>
+<tr><td>Układ, wykończenie, utlenienie, beczka</td><td>zamrożone w tym przykładzie</td><td>–</td><td>Czas pracy lasera (kink)</td><td>h</td></tr>
+</table></div>
+<p><b>Ograniczenia:</b> D_niewid ≤ 1 m, sztywność ≥ 60 %, Ø wylotu ≥ 25 µm, mostek między otworami ≥ 30 µm. <b>Cel:</b> jak najwięcej światła pod 45° (τ45) przy spełnionych ograniczeniach.</p>
+<div class="ctl" id="c1"></div>
+<div class="plot" id="p1"></div>
+<div class="wynik" id="w1"></div>
+<details class="pytanie"><summary>Pytanie: dochodzi jeszcze jedna zmienna (5 poziomów). O ile razy rośnie siatka, a o ile plan 10·d punktów?</summary>
+<p>Siatka rośnie 5 razy (L<sup>d+1</sup> = 5·L<sup>d</sup>). Plan 10·d rośnie tylko o 10 punktów, np. z 6 zmiennych (60 punktów) do 7 (70 punktów), czyli o 17 %. Dlatego przy kilku zmiennych siatka przestaje być możliwa, a plan przestrzenny dalej działa.</p></details>
+</section>
+
+<section id="r2">
+<h2><span class="nr">2</span>Zmienne bezwymiarowe zamiast Ø i rozstawu</h2>
+<p class="intuicja">Światło „widzi” proporcje, nie mikrometry. Prześwit φ to udział powierzchni zajęty przez otwory, smukłość to grubość podzielona przez Ø (jak głęboka jest „rurka”), stożek to stosunek Ø wlotu do Ø wylotu. Dwa otwory w innej skali, ale z tymi samymi proporcjami, przepuszczają na wprost tyle samo światła. Jedna zmienna zastępuje wtedy dwie (Ø i rozstaw), więc przestrzeń do przeszukania jest mniejsza. Uwaga: to działa tylko dla wielkości, które naprawdę są bezwymiarowe. Wykres poniżej pokazuje, dla których tak jest.</p>
+<div class="ctl" id="c2"></div>
+<div class="grid2"><div class="plot" id="p2a"></div><div class="plot" id="p2b"></div></div>
+<div class="wynik" id="w2"></div>
+<details class="pytanie"><summary>Pytanie: zwiększasz Ø z 50 do 100 µm i rozstaw z 200 do 400 µm. Co stanie się z τ0 i z D_niewid?</summary>
+<p>Prześwit φ ∝ (Ø/rozstaw)² się nie zmienia, więc τ0 zostaje taki sam. D_niewid wzrośnie, bo oko ocenia, czy widzi punkty o danym rozstawie w mikrometrach, a nie tylko ich proporcje. To jest przykład, że nie wszystko da się sprowadzić do bezwymiarowych grup. Tam, gdzie skala ma znaczenie, zostaje zmienna wymiarowa (tu grubość i rozstaw).</p></details>
+</section>
+
+<section id="r3">
+<h2><span class="nr">3</span>Jeden parametr naraz kontra plan przestrzenny</h2>
+<p class="intuicja">Zmienianie jednego parametru naraz (OFAT) daje krzyż punktów i nie widzi interakcji, np. że stożek działa inaczej przy małej, a inaczej przy dużej smukłości. Siatka pokrywa pole, ale tylko przy gotowej liczbie punktów (m²) i powtarza te same wartości na osiach. Losowe punkty zostawiają dziury. Łaciński hipersześcian (LHS), ciąg Haltona i maximin rozsuwają punkty tak, żeby żadna wartość się nie powtarzała i żeby największa pusta przestrzeń była mała. Tę „największą lukę” da się policzyć i porównać, to robi wykres.</p>
+<div class="ctl" id="c3"></div>
+<div class="grid2"><div class="plot tall" id="p3a"></div><div class="plot tall" id="p3b"></div></div>
+<div class="wynik" id="w3"></div>
+<details class="pytanie"><summary>Pytanie: masz 3 zmienne i budżet 30 punktów. Czemu LHS bije siatkę 3×3×3 i metodę „jeden parametr naraz”?</summary>
+<p>Siatka 3×3×3 ma 27 punktów, ale każda zmienna przyjmuje tylko 3 wartości, więc krzywizny nie wyznaczysz dokładniej niż z trzech punktów. LHS daje 30 różnych wartości każdej zmiennej. OFAT mierzy tylko osie przez punkt środkowy, więc narożniki (np. duże Ø i duży stożek naraz) zostają puste, a interakcji nie da się odróżnić od szumu.</p></details>
+</section>
+
+<section id="r4">
+<h2><span class="nr">4</span>Przesiewanie: które parametry można zamrozić</h2>
+<p class="intuicja">Przed budową dokładnego modelu pytamy, które zmienne w ogóle coś zmieniają. Metoda Morrisa robi kilka „spacerów” po przestrzeni i mierzy, o ile zmienia się wynik przy małym kroku. μ* to średni bezwzględny wpływ, σ pokazuje, czy wpływ zależy od położenia (interakcje, nieliniowość). Indeksy Sobola rozbijają wariancję wyniku: S1 to udział samej zmiennej, ST udział razem z interakcjami. Morris jest tani (około 10·(d+1) przypadków), Sobol potrzebuje tysięcy, więc liczymy go na modelu zastępczym, a nie na symulatorze.</p>
+<div class="ctl" id="c4"></div>
+<div class="grid2"><div class="plot tall" id="p4a"></div><div class="plot tall" id="p4b"></div></div>
+<div class="scroll" id="t4"></div>
+<div class="wynik" id="w4"></div>
+<details class="pytanie"><summary>Pytanie: parametr ma małe μ*, ale duże σ i ST ≈ 0,3. Zamrażasz go?</summary>
+<p>Nie. Małe μ* przy dużym σ znaczy, że efekt zmienia znak lub zależy od innych zmiennych i średnio się znosi. ST ≈ 0,3 potwierdza, że parametr odpowiada za około 30 % wariancji razem z interakcjami. Zamrażać wolno tylko to, co ma małe μ*, małe σ i małe ST jednocześnie.</p></details>
+</section>
+
+<section id="r5">
+<h2><span class="nr">5</span>Dopasowanie i istotność trendu</h2>
+<p class="intuicja">Regresja w skali log-log zamienia prawo potęgowe y ∝ x<sup>b</sup> w prostą: ln y = a + b·ln x. Współczynnik b to wykładnik („gdy x rośnie o 10 %, y zmienia się o około b·10 %”). Każdy współczynnik ma niepewność standardową u(b). Przedział rozszerzony ±2u (k = 2, jak w GUM) pokrywa prawdę z prawdopodobieństwem około 95 %. Jeśli przedział zawiera zero, trend nie wyróżnia się z szumu. Niepewność typu A bierze się z powtórzeń tego samego punktu (u = s/√n), a wykres reszt pokazuje, czy model nie pomija krzywizny.</p>
+<div class="ctl" id="c5"></div>
+<div class="scroll" id="t5"></div>
+<div class="grid2"><div class="plot tall" id="p5a"></div><div class="plot tall" id="p5b"></div></div>
+<div class="plot" id="p5c"></div>
+<div class="wynik" id="w5"></div>
+<details class="pytanie"><summary>Pytanie: b = −0,17, u(b) = 0,10. Czy trend jest miarodajny?</summary>
+<p>Nie. Przedział rozszerzony to −0,17 ± 0,20, czyli od −0,37 do +0,03, i zawiera zero. Przy tej niepewności nie można stwierdzić, że wpływ w ogóle istnieje. Trzeba dodać punkty (u maleje jak 1/√n) albo uznać zmienną za nieistotną.</p></details>
+</section>
+
+<section id="r6">
+<h2><span class="nr">6</span>Model zastępczy: proces gaussowski (GP)</h2>
+<p class="intuicja">GP przechodzi blisko punktów pomiarowych, a między nimi „zgaduje” gładko i mówi, jak bardzo jest niepewny. Długość korelacji ℓ decyduje, jak daleko sięga wpływ jednego punktu: mała ℓ daje poszarpaną krzywą dopasowaną do szumu, duża ℓ wygładza wszystko. Poziom szumu (nugget) mówi, ile rozrzutu uznajemy za losowy. Sprawdzianem jest walidacja krzyżowa (LOO: wyrzuć punkt, przewidź go) i osobny zbiór testowy. Jeśli pasmo ±2σ jest uczciwe, pokrywa około 95 % punktów.</p>
+<div class="ctl" id="c6"></div>
+<div class="plot tall" id="p6"></div>
+<div class="kpi" id="k6"></div>
+<div class="wynik" id="w6"></div>
+<details class="pytanie"><summary>Pytanie: pokrycie ±2σ na zbiorze testowym wynosi 70 %. Co to znaczy i co zmienisz?</summary>
+<p>Model jest zbyt pewny siebie: pasmo jest za wąskie względem rzeczywistego błędu. Najczęściej ℓ jest za duża (za gładko), a szum za mały, albo zbiór testowy leży poza obszarem treningowym. Zwiększ szum, zmniejsz ℓ lub dobierz je automatycznie z LOO, i sprawdź ponownie. Przy dobrej kalibracji pokrycie jest bliskie 95 %.</p></details>
+</section>
+
+<section id="r7">
+<h2><span class="nr">7</span>Obszar pożądany i optimum</h2>
+<p class="intuicja">Model zastępczy pozwala narysować mapę decyzji bez nowych renderów. Na osiach są smukłość i prześwit, a kolor to światło pod 45°. Zacieniony na szaro obszar łamie ograniczenia: D_niewid &gt; 1 m albo sztywność &lt; 60 %. W obszarze pożądanym szukamy maksimum τ45. Warto zaznaczyć „bezpieczny” wariant, w którym granicę wyznacza górna wartość z pasma (μ + 2σ), bo optimum leżące równo na granicy ma 50 % szans, że jest po złej stronie.</p>
+<div class="ctl" id="c7"></div>
+<div class="plot tall" id="p7"></div>
+<div class="kpi" id="k7"></div>
+<div class="wynik" id="w7"></div>
+<details class="pytanie"><summary>Pytanie: optimum wypadło dokładnie na granicy D_niewid = 1 m. Czy to dobry wybór?</summary>
+<p>Niekoniecznie. Na granicy model ma 50 % szans, że prawdziwe D_niewid jest większe niż 1 m. Przełącz na wariant konserwatywny (μ + 2σ), zostaw margines albo dołóż renderów właśnie w tym miejscu, bo tam decyzja jest najmniej pewna.</p></details>
+</section>
+
+<section id="r8">
+<h2><span class="nr">8</span>Próbkowanie adaptacyjne: mniej renderów</h2>
+<p class="intuicja">Zamiast liczyć od razu setki punktów, liczymy małą partię, dopasowujemy model i wybieramy następną partię tam, gdzie da najwięcej informacji. Trzy kryteria: największa niepewność modelu (tam nie wiemy), okolice granicy ograniczenia (tam zapada decyzja tak/nie) i oczekiwana poprawa τ45 (tam może być optimum). Poniżej symulacja na „prawdziwym” modelu zbudowanym z danych, z regulowanym szumem. Porównujemy ją z samym LHS o tej samej liczbie punktów.</p>
+<div class="ctl" id="c8"></div>
+<div class="grid2"><div class="plot tall" id="p8a"></div><div class="plot tall" id="p8b"></div></div>
+<div class="kpi" id="k8"></div>
+<div class="wynik" id="w8"></div>
+<details class="pytanie"><summary>Pytanie: po jakim kryterium kończysz rundy?</summary>
+<p>Gdy decyzja przestaje się zmieniać: granica obszaru pożądanego jest stabilna, rekomendowany punkt nie zmienia się po kolejnej partii, a jego niepewność mieści się w tolerancji projektu. Liczba wykonanych renderów nie jest kryterium, tylko kosztem, który chcemy zminimalizować.</p></details>
+</section>
+
+<section id="sciaga">
+<h2><span class="nr">★</span>Ściąga: przepis na następny problem inżynierski</h2>
+<ol class="kroki">
+<li><b>Nazwij problem.</b> Wejścia z zakresami i jednostkami, wyjścia, ograniczenia i z góry zapisane kryterium stopu (np. „decyzja się nie zmienia”).</li>
+<li><b>Zmniejsz wymiar.</b> Grupy bezwymiarowe, zamrożone parametry o znanym wpływie, fizyka zamiast zgadywania.</li>
+<li><b>Przesiej tanio.</b> Morris (około 10·(d+1) przypadków) albo plan frakcyjny. Zamroź to, co ma małe μ*, σ i ST.</li>
+<li><b>Zaplanuj bazę przestrzenną.</b> LHS, Halton lub maximin, około 10 punktów na zmienną, skupione w obszarze zainteresowania.</li>
+<li><b>Dodaj powtórzenia.</b> 3–6 punktów po kilka razy z innym ziarnem szumu: to niepewność typu A (u = s/√n).</li>
+<li><b>Policz skryptem.</b> Kolejka, która pomija wykonane przypadki. Wyniki do plików CSV, ciężkie rendery poza gitem.</li>
+<li><b>Dopasuj model.</b> Regresja log-log ze współczynnikami ±2u i wykresem reszt. GP, gdy w resztach widać krzywiznę.</li>
+<li><b>Zwaliduj.</b> LOO, zbiór testowy, pokrycie ±2σ ≈ 95 %. Nie ekstrapoluj poza zakres danych.</li>
+<li><b>Próbkuj adaptacyjnie.</b> Partie po 20–50 punktów: niepewność, granica ograniczeń, oczekiwana poprawa. Powtarzaj do stabilnej decyzji.</li>
+<li><b>Zaraportuj.</b> Mapa obszaru pożądanego, optimum z przedziałem, wrażliwość („+10 % parametru → ±x % wyniku”) i zakres ważności modelu.</li>
+</ol>
+</section>
+
+<section id="slownik">
+<h2><span class="nr">A–Z</span>Słowniczek</h2>
+<dl>
+<dt>DoE (planowanie doświadczeń)</dt><dd>Dobór punktów pomiarowych lub symulacyjnych tak, by odpowiedzieć na pytanie małym kosztem.</dd>
+<dt>Czynnik, poziom, odpowiedź</dt><dd>Czynnik to zmienna wejściowa, poziom to jej wartość, odpowiedź to mierzony wynik.</dd>
+<dt>Siatka pełna</dt><dd>Wszystkie kombinacje poziomów; L<sup>d</sup> przypadków.</dd>
+<dt>OFAT</dt><dd>Jeden czynnik naraz. Nie widzi interakcji.</dd>
+<dt>LHS (łaciński hipersześcian)</dt><dd>Każdy z N przedziałów każdej zmiennej zawiera dokładnie jeden punkt.</dd>
+<dt>Halton, Sobol (ciągi)</dt><dd>Deterministyczne ciągi równomiernie wypełniające przestrzeń. Dodawanie kolejnych punktów nie psuje poprzednich.</dd>
+<dt>Maximin</dt><dd>Plan, w którym najmniejsza odległość między punktami jest jak największa.</dd>
+<dt>Największa luka</dt><dd>Odległość najgorzej pokrytego miejsca od najbliższego punktu planu (promień pokrycia).</dd>
+<dt>Morris: μ*, σ</dt><dd>Średni bezwzględny efekt elementarny i jego rozrzut (nieliniowość, interakcje).</dd>
+<dt>Sobol: S1, ST</dt><dd>Udział wariancji wyniku od samej zmiennej (S1) i razem z interakcjami (ST).</dd>
+<dt>Regresja log-log</dt><dd>Dopasowanie ln y do ln x; nachylenie to wykładnik prawa potęgowego.</dd>
+<dt>R², R² skorygowane</dt><dd>Udział wyjaśnionej wariancji; skorygowane karze za dodatkowe zmienne.</dd>
+<dt>u (niepewność standardowa), U = k·u</dt><dd>Niepewność standardowa i rozszerzona; k = 2 daje około 95 %.</dd>
+<dt>Typ A i typ B</dt><dd>Typ A: ze statystyki powtórzeń. Typ B: z innej wiedzy (specyfikacje, doświadczenie).</dd>
+<dt>Reszty</dt><dd>Różnice między danymi a modelem. Powinny wyglądać jak szum bez trendu.</dd>
+<dt>GP (proces gaussowski)</dt><dd>Model zastępczy zwracający średnią i niepewność w każdym punkcie.</dd>
+<dt>Długość korelacji ℓ, szum (nugget)</dt><dd>Zasięg wpływu punktu oraz poziom rozrzutu uznanego za losowy.</dd>
+<dt>LOO, Q²</dt><dd>Walidacja „wyrzuć jeden”; Q² to R² policzone na takich przewidywaniach.</dd>
+<dt>Pokrycie ±2σ</dt><dd>Odsetek punktów mieszczących się w paśmie; cel około 95 %.</dd>
+<dt>EI (oczekiwana poprawa)</dt><dd>Średni zysk względem najlepszego dotąd wyniku; kryterium szukania optimum.</dd>
+<dt>Ekstrapolacja</dt><dd>Wnioskowanie poza zakresem danych. Model nic tam nie gwarantuje.</dd>
+<dt>Smukłość, prześwit, stożek</dt><dd>Grubość/Ø wylotu, udział powierzchni otworów, Ø wlotu/Ø wylotu.</dd>
+<dt>τ0, τ45, D_niewid</dt><dd>Światło na wprost i pod 45° (w %) oraz odległość (w m), od której otworów nie widać.</dd>
+</dl>
+</section>
+</main>
+<footer>Dane: <code>docs/przeglady/wyniki-makro.csv</code> (projekt lampy). Plik jest samodzielny: wykresy rysuje Plotly 2.35.3 z cdnjs, a obliczenia (regresja, GP, Morris, Sobol) wykonuje przeglądarka.</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.3/plotly.min.js" crossorigin="anonymous"></script>
+<script>
+'use strict';
+/* ===== dane (wstawia nauka_doe_build.py) ===== */
+const RAW = {"n":318,"d":[65.0,350.0,60.0,100.0,100.0,80.0,150.0,200.0,100.0,80.0,40.0,300.0,200.0,250.0,80.0,120.0,400.0,80.0,250.0,350.0,80.0,250.0,120.0,250.0,150.0,60.0,400.0,300.0,350.0,80.0,250.0,400.0,250.0,200.0,200.0,120.0,400.0,80.0,80.0,350.0,50.0,80.0,180.0,400.0,120.0,180.0,200.0,80.0,350.0,300.0,120.0,250.0,180.0,40.0,350.0,50.0,100.0,80.0,60.0,100.0,50.0,200.0,250.0,120.0,120.0,200.0,250.0,400.0,400.0,100.0,180.0,200.0,100.0,80.0,300.0,100.0,300.0,180.0,30.0,300.0,250.0,80.0,50.0,80.0,120.0,80.0,350.0,60.0,200.0,200.0,180.0,350.0,200.0,100.0,60.0,100.0,120.0,80.0,60.0,100.0,180.0,200.0,400.0,120.0,120.0,120.0,80.0,120.0,300.0,150.0,80.0,350.0,120.0,250.0,120.0,80.0,180.0,150.0,80.0,80.0,50.0,300.0,180.0,80.0,150.0,60.0,80.0,200.0,100.0,350.0,60.0,60.0,60.0,150.0,100.0,60.0,80.0,400.0,350.0,60.0,80.0,80.0,180.0,120.0,60.0,80.0,80.0,60.0,200.0,180.0,60.0,120.0,300.0,180.0,300.0,250.0,80.0,80.0,300.0,60.0,60.0,350.0,300.0,350.0,80.0,30.0,80.0,200.0,200.0,60.0,350.0,200.0,400.0,80.0,80.0,120.0,180.0,60.0,300.0,80.0,250.0,100.0,200.0,300.0,350.0,100.0,120.0,150.0,170.0,80.0,80.0,400.0,300.0,250.0,120.0,250.0,100.0,350.0,250.0,120.0,150.0,50.0,100.0,60.0,50.0,60.0,150.0,150.0,400.0,100.0,300.0,200.0,120.0,180.0,100.0,300.0,100.0,120.0,200.0,80.0,60.0,80.0,200.0,80.0,200.0,300.0,60.0,400.0,80.0,300.0,300.0,250.0,150.0,60.0,300.0,120.0,300.0,300.0,350.0,200.0,200.0,100.0,120.0,400.0,80.0,80.0,50.0,120.0,200.0,350.0,400.0,120.0,100.0,300.0,80.0,250.0,200.0,180.0,400.0,180.0,250.0,80.0,100.0,150.0,100.0,120.0,120.0,50.0,300.0,200.0,80.0,120.0,300.0,50.0,150.0,250.0,60.0,100.0,50.0,60.0,350.0,120.0,250.0,120.0,50.0,350.0,200.0,60.0,120.0,400.0,80.0,100.0,50.0,60.0,100.0,350.0,350.0,60.0,50.0,400.0,400.0,250.0,80.0,60.0,120.0,80.0,300.0,200.0,60.0,100.0,80.0,100.0,60.0,200.0,400.0,80.0,80.0,300.0],"k":[2.0,1.0,2.0,2.5,2.0,2.0,2.5,1.0,2.5,1.5,2.0,1.2,1.2,1.0,2.0,1.5,1.0,1.0,1.0,1.2,2.0,1.2,2.0,1.0,2.0,2.0,1.2,1.0,1.0,3.0,1.0,1.0,1.0,1.0,1.0,2.0,1.0,2.0,2.0,1.2,2.0,2.5,2.0,1.2,1.5,2.0,1.2,2.0,1.2,1.0,2.0,1.0,2.0,1.5,1.2,2.0,1.5,2.0,1.5,1.5,1.0,1.5,1.0,2.0,2.0,1.2,1.0,1.0,1.2,2.0,2.0,1.2,1.5,3.0,1.2,1.0,1.2,1.5,2.0,1.2,1.2,2.0,2.0,1.5,2.0,3.0,1.2,2.5,2.0,1.0,1.5,1.0,1.0,2.5,1.5,1.5,2.5,2.5,3.0,2.5,1.5,1.2,1.2,2.0,2.0,2.0,2.0,1.5,1.0,2.0,2.0,1.0,2.5,1.0,2.5,2.5,2.0,2.0,3.0,1.0,2.0,1.0,2.0,2.0,2.5,2.0,1.5,1.0,2.5,1.0,3.0,2.0,3.0,1.5,1.0,3.0,1.25,1.0,1.0,1.5,2.5,1.5,2.0,2.5,3.0,2.0,2.0,2.0,1.0,1.0,2.5,2.0,1.0,2.0,1.0,1.0,2.0,1.5,1.0,1.5,2.5,1.2,1.2,1.2,2.5,1.0,4.0,1.5,2.0,1.5,1.0,1.2,1.2,2.0,2.0,2.0,2.0,1.5,1.0,2.0,1.0,1.0,1.0,1.0,1.0,2.0,1.5,2.0,2.0,2.0,2.0,1.0,1.0,1.0,2.5,1.0,1.5,1.0,1.0,3.0,2.0,1.0,1.5,2.5,2.0,2.5,1.5,2.5,1.0,1.0,1.2,2.0,1.5,2.0,3.0,1.2,1.5,2.0,1.5,2.0,3.0,2.0,1.0,1.5,1.2,1.0,1.5,1.0,2.0,1.2,1.0,1.0,1.5,2.0,1.2,3.0,1.2,1.0,1.2,1.0,1.0,3.0,2.0,1.0,3.0,2.5,2.0,1.0,1.2,1.0,1.2,2.5,1.5,1.0,1.0,1.2,1.0,1.5,1.0,2.0,1.2,2.0,2.0,2.5,2.0,2.0,2.0,2.0,1.0,2.0,1.5,1.5,1.0,2.0,1.5,1.2,2.0,3.0,2.0,2.0,1.0,2.5,1.0,2.5,2.0,1.0,1.0,3.0,2.0,1.2,3.0,1.0,2.0,3.0,3.0,1.0,1.0,2.5,2.0,1.0,1.2,1.2,2.0,1.5,2.0,2.0,1.0,1.0,2.5,2.0,1.5,2.5,2.5,1.5,1.0,2.0,2.0,1.0],"p":[400.0,1200.0,400.0,500.0,600.0,400.0,600.0,900.0,600.0,600.0,400.0,1600.0,1200.0,900.0,800.0,500.0,1200.0,300.0,1000.0,1600.0,400.0,1000.0,280.0,600.0,600.0,500.0,1200.0,1100.0,800.0,600.0,800.0,1600.0,800.0,700.0,1000.0,600.0,1100.0,400.0,400.0,1600.0,350.0,500.0,800.0,1400.0,400.0,900.0,1000.0,400.0,1000.0,1400.0,350.0,700.0,1000.0,350.0,1400.0,250.0,300.0,300.0,300.0,300.0,300.0,800.0,1000.0,500.0,500.0,1000.0,1100.0,1000.0,1600.0,600.0,400.0,1200.0,500.0,600.0,1600.0,300.0,1000.0,700.0,400.0,1400.0,1000.0,400.0,400.0,300.0,600.0,500.0,1200.0,500.0,800.0,600.0,800.0,1600.0,1200.0,400.0,500.0,600.0,600.0,500.0,300.0,500.0,700.0,800.0,1600.0,450.0,1200.0,600.0,500.0,400.0,800.0,600.0,400.0,900.0,500.0,600.0,600.0,600.0,700.0,600.0,400.0,400.0,150.0,900.0,700.0,200.0,600.0,300.0,400.0,700.0,600.0,1200.0,400.0,400.0,300.0,600.0,300.0,600.0,400.0,1400.0,1600.0,600.0,400.0,500.0,1200.0,500.0,400.0,400.0,400.0,600.0,1200.0,300.0,600.0,400.0,1000.0,450.0,1600.0,1200.0,220.0,500.0,1100.0,600.0,400.0,1400.0,1400.0,1200.0,400.0,300.0,400.0,700.0,700.0,500.0,1100.0,600.0,1400.0,300.0,400.0,1000.0,500.0,400.0,1400.0,1000.0,800.0,300.0,600.0,1200.0,800.0,500.0,500.0,400.0,400.0,600.0,350.0,1200.0,1600.0,1200.0,500.0,1100.0,400.0,1400.0,900.0,600.0,600.0,250.0,400.0,300.0,600.0,400.0,500.0,600.0,1000.0,300.0,1200.0,800.0,600.0,800.0,500.0,800.0,600.0,300.0,700.0,400.0,500.0,600.0,1000.0,400.0,600.0,900.0,400.0,900.0,1200.0,800.0,1000.0,1000.0,600.0,300.0,1200.0,600.0,1000.0,700.0,1000.0,1100.0,800.0,600.0,500.0,1600.0,400.0,600.0,700.0,300.0,800.0,1400.0,1000.0,500.0,500.0,1000.0,300.0,800.0,1100.0,800.0,1400.0,600.0,1200.0,400.0,500.0,600.0,400.0,700.0,600.0,300.0,800.0,700.0,300.0,600.0,1200.0,800.0,500.0,1200.0,500.0,600.0,1000.0,600.0,1100.0,600.0,700.0,600.0,200.0,1000.0,800.0,500.0,800.0,1200.0,500.0,300.0,500.0,600.0,500.0,1000.0,900.0,500.0,180.0,1100.0,1000.0,800.0,500.0,300.0,500.0,250.0,800.0,900.0,600.0,400.0,600.0,400.0,300.0,800.0,900.0,700.0,400.0,700.0],"t":[0.5,0.5,0.5,0.4,0.5,0.5,0.5,0.4,0.5,0.5,0.5,0.4,0.5,0.5,0.5,0.4,0.5,0.4,0.5,0.5,0.5,0.4,0.5,0.5,0.5,0.5,0.5,0.4,0.5,0.4,0.5,0.4,0.5,0.5,0.5,0.4,0.5,0.5,0.4,0.4,0.5,0.4,0.4,0.5,0.5,0.5,0.5,0.5,0.4,0.5,0.5,0.4,0.5,0.4,0.5,0.5,0.5,0.5,0.5,0.4,0.5,0.4,0.4,0.4,0.5,0.4,0.4,0.5,0.5,0.4,0.5,0.4,0.5,0.5,0.5,0.5,0.4,0.4,0.5,0.5,0.5,0.5,0.5,0.4,0.4,0.4,0.4,0.4,0.5,0.5,0.5,0.4,0.5,0.5,0.4,0.4,0.4,0.5,0.5,0.5,0.5,0.4,0.4,0.5,0.5,0.5,0.4,0.4,0.4,0.4,0.5,0.5,0.5,0.4,0.5,0.4,0.4,0.4,0.4,0.5,0.5,0.4,0.5,0.5,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.5,0.4,0.5,0.4,0.5,0.4,0.4,0.5,0.5,0.4,0.5,0.5,0.5,0.4,0.4,0.5,0.4,0.5,0.5,0.5,0.4,0.5,0.5,0.4,0.5,0.5,0.4,0.4,0.4,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.4,0.4,0.4,0.5,0.5,0.5,0.4,0.4,0.5,0.4,0.5,0.4,0.4,0.4,0.5,0.5,0.5,0.5,0.5,0.5,0.4,0.5,0.4,0.4,0.5,0.5,0.5,0.4,0.5,0.5,0.5,0.4,0.4,0.5,0.5,0.5,0.4,0.4,0.5,0.5,0.4,0.5,0.5,0.5,0.4,0.5,0.5,0.4,0.5,0.4,0.4,0.4,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.4,0.5,0.5,0.5,0.4,0.4,0.5,0.4,0.5,0.4,0.4,0.4,0.4,0.5,0.5,0.5,0.5,0.5,0.5,0.4,0.4,0.5,0.4,0.5,0.5,0.4,0.5,0.4,0.5,0.5,0.4,0.5,0.4,0.5,0.4,0.5,0.5,0.5,0.5,0.4,0.5,0.4,0.5,0.5,0.4,0.5,0.4,0.5,0.5,0.5,0.4,0.5,0.5,0.4,0.5,0.4,0.5,0.5,0.5,0.4,0.5,0.5,0.5,0.5,0.4,0.5,0.4,0.5,0.5,0.4,0.5,0.5,0.5,0.4,0.5,0.5,0.5,0.5,0.5,0.5,0.4,0.4,0.5,0.5,0.4,0.5,0.5,0.5],"s":[7.6923,1.4286,8.3333,4.0,5.0,6.25,3.3333,2.0,5.0,6.25,12.5,1.3333,2.5,2.0,6.25,3.3333,1.25,5.0,2.0,1.4286,6.25,1.6,4.1667,2.0,3.3333,8.3333,1.25,1.3333,1.4286,5.0,2.0,1.0,2.0,2.5,2.5,3.3333,1.25,6.25,5.0,1.1429,10.0,5.0,2.2222,1.25,4.1667,2.7778,2.5,6.25,1.1429,1.6667,4.1667,1.6,2.7778,10.0,1.4286,10.0,5.0,6.25,8.3333,4.0,10.0,2.0,1.6,3.3333,4.1667,2.0,1.6,1.25,1.25,4.0,2.7778,2.0,5.0,6.25,1.6667,5.0,1.3333,2.2222,16.6667,1.6667,2.0,6.25,10.0,5.0,3.3333,5.0,1.1429,6.6667,2.5,2.5,2.7778,1.1429,2.5,5.0,6.6667,4.0,3.3333,6.25,8.3333,5.0,2.7778,2.0,1.0,4.1667,4.1667,4.1667,5.0,3.3333,1.3333,2.6667,6.25,1.4286,4.1667,1.6,4.1667,5.0,2.2222,2.6667,5.0,6.25,10.0,1.3333,2.7778,6.25,2.6667,6.6667,5.0,2.0,4.0,1.1429,6.6667,6.6667,6.6667,2.6667,5.0,6.6667,6.25,1.0,1.4286,6.6667,5.0,6.25,2.7778,3.3333,8.3333,6.25,6.25,6.6667,2.0,2.7778,6.6667,4.1667,1.6667,2.7778,1.3333,2.0,6.25,5.0,1.6667,8.3333,6.6667,1.1429,1.3333,1.4286,6.25,16.6667,6.25,2.5,2.5,8.3333,1.4286,2.0,1.0,5.0,6.25,4.1667,2.7778,6.6667,1.3333,6.25,1.6,5.0,2.0,1.3333,1.1429,5.0,4.1667,3.3333,2.9412,6.25,6.25,1.0,1.6667,1.6,3.3333,2.0,5.0,1.4286,1.6,4.1667,3.3333,10.0,4.0,6.6667,10.0,8.3333,3.3333,2.6667,1.0,5.0,1.6667,2.0,4.1667,2.7778,5.0,1.3333,5.0,4.1667,2.0,6.25,6.6667,5.0,2.0,6.25,2.5,1.6667,8.3333,1.25,6.25,1.6667,1.3333,2.0,3.3333,8.3333,1.3333,3.3333,1.6667,1.3333,1.4286,2.0,2.0,4.0,3.3333,1.25,6.25,6.25,10.0,4.1667,2.5,1.1429,1.0,4.1667,4.0,1.6667,6.25,1.6,2.5,2.2222,1.25,2.7778,1.6,6.25,4.0,3.3333,4.0,4.1667,4.1667,10.0,1.6667,2.0,6.25,3.3333,1.6667,10.0,2.6667,2.0,6.6667,5.0,10.0,8.3333,1.1429,4.1667,2.0,3.3333,10.0,1.1429,2.5,8.3333,4.1667,1.0,6.25,5.0,10.0,8.3333,4.0,1.4286,1.1429,8.3333,10.0,1.0,1.25,2.0,6.25,6.6667,4.1667,6.25,1.6667,2.5,8.3333,5.0,5.0,4.0,8.3333,2.5,1.0,6.25,6.25,1.6667],"phi":[2.3948,7.7149,2.0405,3.6276,2.5192,3.6276,5.6681,4.4785,2.5192,1.6123,0.9069,3.1883,2.5192,6.9977,0.9069,5.2237,10.0767,6.4491,5.6681,4.3397,3.6276,5.6681,16.6573,15.7448,5.6681,1.3059,10.0767,6.7455,17.3586,1.6123,8.8564,5.6681,8.8564,7.4033,3.6276,3.6276,11.9921,3.6276,3.6276,4.3397,1.8508,2.3217,4.5912,7.4033,8.1621,3.6276,3.6276,3.6276,11.1095,4.1643,10.6607,11.5676,2.9384,1.1845,5.6681,3.6276,10.0767,6.4491,3.6276,10.0767,2.5192,5.6681,5.6681,5.2237,5.2237,3.6276,4.6844,14.5104,5.6681,2.5192,18.3647,2.5192,3.6276,1.6123,3.1883,10.0767,8.1621,5.9966,0.5101,4.1643,5.6681,3.6276,1.417,6.4491,3.6276,2.3217,7.7149,1.3059,5.6681,10.0767,4.5912,4.3397,2.5192,5.6681,1.3059,2.5192,3.6276,2.3217,3.6276,3.6276,5.9966,5.6681,5.6681,6.4491,0.9069,3.6276,2.3217,8.1621,12.7533,5.6681,3.6276,13.7155,5.2237,15.7448,3.6276,1.6123,5.9966,5.6681,3.6276,3.6276,10.0767,10.0767,5.9966,14.5104,5.6681,3.6276,3.6276,7.4033,2.5192,7.7149,2.0405,2.0405,3.6276,5.6681,10.0767,0.9069,3.6276,7.4033,4.3397,0.9069,3.6276,2.3217,2.0405,5.2237,2.0405,3.6276,3.6276,0.9069,2.5192,32.6484,0.9069,8.1621,8.1621,14.5104,3.1883,3.9362,11.9921,2.3217,6.7455,0.9069,2.0405,5.6681,4.1643,7.7149,3.6276,0.9069,3.6276,7.4033,7.4033,1.3059,9.1814,10.0767,7.4033,6.4491,3.6276,1.3059,11.7534,2.0405,4.1643,0.5804,8.8564,10.0767,10.0767,5.6681,17.3586,3.6276,5.2237,12.7533,16.3809,1.6123,4.7381,10.0767,3.1883,3.9362,5.2237,4.6844,5.6681,5.6681,6.9977,3.6276,5.6681,3.6276,5.6681,3.6276,0.6298,2.0405,8.1621,5.6681,14.5104,10.0767,5.6681,5.6681,3.6276,4.5912,3.6276,12.7533,2.5192,14.5104,7.4033,3.6276,1.3059,1.6123,3.6276,3.6276,10.0767,10.0767,2.0405,17.9141,0.4031,12.7533,8.1621,5.6681,5.6681,3.6276,5.6681,3.6276,8.1621,16.6573,11.1095,2.998,5.6681,2.5192,5.2237,5.6681,3.6276,1.6123,0.4627,14.5104,5.6681,5.6681,14.5104,5.2237,3.6276,8.1621,6.4491,8.8564,2.998,4.5912,7.4033,8.1621,3.9362,3.6276,3.6276,5.6681,5.6681,2.6652,3.6276,2.5192,12.7533,7.4033,6.4491,3.6276,5.6681,0.3543,8.1621,3.9362,1.3059,2.5192,0.2267,0.9069,9.1814,3.6276,11.5676,3.6276,5.6681,11.1095,5.6681,1.3059,2.0405,10.0767,2.3217,10.0767,0.9069,0.9069,3.6276,11.1095,13.7155,1.3059,6.9977,11.9921,14.5104,8.8564,2.3217,3.6276,5.2237,9.2867,12.7533,4.4785,0.9069,5.6681,1.6123,5.6681,3.6276,5.6681,17.9141,1.1845,3.6276,16.6573],"tau0":[2.3643,8.0985,2.0148,3.4705,2.4859,3.5813,5.5327,4.424,2.4859,1.5914,0.8951,3.0913,2.4881,6.8936,0.894,5.0234,10.8086,6.5593,5.5556,4.1735,3.5813,5.5572,16.2693,15.5565,5.5269,1.2517,10.8086,6.6499,16.842,1.5914,8.6966,5.4152,8.6948,8.1056,3.5834,3.5817,11.7198,3.5813,3.5813,4.1735,1.8746,2.2137,4.5305,7.8717,8.1296,3.5791,3.5834,3.5813,10.7249,4.4281,11.5271,12.6974,2.8992,1.1786,6.0269,3.5284,10.3233,6.5593,3.6527,10.3233,2.5133,5.5982,5.5572,5.037,5.0234,3.5834,4.6263,13.9293,5.4152,2.4859,18.0301,2.4881,3.4705,1.5914,3.0913,10.3233,7.9346,6.5375,0.5038,4.4281,5.5572,3.5813,1.399,6.5593,3.5833,2.2137,8.0985,1.2517,5.5982,9.9526,4.5305,4.1735,2.4881,5.6187,1.2517,2.4859,3.5817,2.2137,3.6527,3.4705,6.5375,5.5982,5.4152,6.3722,0.8948,3.5833,2.2137,8.1296,12.4407,5.5269,3.5813,13.7929,5.037,15.5565,3.5817,1.5914,6.5375,5.5327,3.5813,3.5813,10.1066,10.0261,6.5375,14.3256,5.5327,3.6527,3.5813,8.1056,2.4859,8.0985,2.0148,2.0148,3.6527,5.5269,10.3233,0.8966,3.5813,7.8717,4.1735,0.8966,3.5813,2.2137,2.0135,5.037,2.0148,3.5813,3.5813,0.8966,2.4881,33.4345,0.8966,8.1296,7.9344,14.1555,3.0913,3.9248,11.4339,2.2137,6.6499,0.8966,2.0148,6.0269,4.4281,8.0985,3.5813,0.8982,3.5813,8.1056,8.1056,1.2517,9.0065,9.9526,7.8717,6.5593,3.5813,1.2884,11.2715,2.0148,4.4281,0.5719,8.6966,10.3233,9.9526,5.8029,16.842,3.4705,5.0234,12.671,16.1479,1.5914,4.9719,10.8086,3.0913,3.9248,5.0234,4.6263,5.6187,6.0269,6.8936,3.5833,5.5327,3.5284,5.6187,3.6527,0.6219,2.0148,7.8753,5.5269,13.9293,10.3233,5.8029,5.5982,3.5833,4.5305,3.4705,12.4407,2.4859,14.9562,8.1056,3.5813,1.2517,1.5914,3.5834,3.5813,9.9526,10.0261,2.0148,18.1735,0.3973,12.4407,7.9346,5.5572,5.5269,3.6527,5.8029,3.5833,7.9346,18.3116,10.7249,2.9617,5.5982,2.4859,5.0234,5.4152,3.5813,1.5914,0.4836,14.9562,5.5982,6.0269,13.9293,5.0234,3.4705,7.9346,6.5593,8.6966,2.9617,4.5305,7.8717,7.8415,3.9248,3.5813,3.4705,5.5269,5.6187,2.8725,3.5817,2.5133,12.4407,8.1056,6.5593,3.5833,5.8029,0.3507,7.8753,3.9248,1.2517,2.4859,0.2246,0.8966,9.0065,3.5833,12.6974,3.5833,5.5959,10.7249,5.5982,1.2517,2.0133,10.8086,2.2137,10.3233,0.8728,0.8966,3.4705,10.7249,13.7929,1.2517,6.7783,11.7198,13.9293,8.6966,2.2137,3.6527,5.037,8.9836,12.4408,4.424,0.8966,5.6187,1.5914,5.6187,3.6527,5.5982,18.1735,1.2398,3.5813,18.3116],"tau45":[0.2769,2.9633,0.1843,1.5025,0.6293,0.5638,2.8225,1.1814,0.73,0.1384,0.0266,1.5161,0.6828,1.8489,0.1412,1.3926,4.3473,0.2618,1.5414,1.9495,0.5638,2.5728,4.6619,4.1483,2.1718,0.1177,5.1492,2.8151,6.5295,0.6408,2.3085,2.5922,2.3044,1.5195,0.7185,1.367,5.3069,0.5638,0.9018,2.125,0.1075,0.6583,2.4069,3.558,1.5609,1.7218,1.0036,0.5638,6.1,1.3012,2.9059,4.159,1.3995,0.0232,2.5743,0.219,1.4347,1.0085,0.146,2.1051,0.0009,2.6698,2.0212,1.8912,1.4464,1.2704,1.629,6.578,2.6501,0.7217,8.8501,0.8664,0.5081,0.4599,1.2834,0.2499,4.2456,2.6275,0.0042,1.6688,2.0191,0.3474,0.0857,0.9182,1.3682,0.905,4.0631,0.302,2.8415,1.9585,1.4036,1.8685,0.4869,1.644,0.0976,0.5277,1.7862,0.5744,0.8066,1.0309,1.9236,1.9512,2.8431,1.8049,0.2508,1.0244,0.5663,2.2092,5.1596,2.8392,0.5589,5.3077,1.9548,5.4298,1.4126,0.4673,3.2886,2.8248,1.44,0.0634,0.6057,4.1553,2.9873,2.271,3.0691,0.5306,0.5133,2.0537,1.0615,3.5556,0.551,0.2966,0.9841,1.8842,0.4087,0.2458,0.1774,3.4763,1.5553,0.0693,1.0488,0.1944,0.9712,2.4698,0.451,0.5596,0.5593,0.1329,0.662,5.4135,0.2123,2.3,2.7983,6.8733,1.2469,1.031,1.8381,0.3236,2.252,0.0367,0.4756,2.804,1.9681,3.7132,0.915,0.0,1.6657,2.7839,3.8983,0.052,3.6208,3.4737,3.832,1.608,0.5635,0.3663,5.6518,0.1528,1.623,0.0911,3.015,0.4169,2.6585,2.3235,7.8091,0.8892,0.9868,4.8241,7.5322,0.2527,0.7104,5.0413,0.9883,1.3487,2.5258,1.2453,0.8068,2.0675,2.4214,1.786,2.1577,0.0008,1.1856,0.8506,0.0388,0.3,2.2053,3.0902,7.6215,0.4087,2.4034,3.0257,0.6979,2.1768,1.4162,6.2669,0.3598,4.0806,3.6689,0.0674,0.3492,0.4025,0.9714,0.3068,2.7414,3.3275,0.0802,7.7277,0.062,5.3058,3.4989,1.5401,1.5628,0.3318,2.8408,1.933,3.5945,7.1048,5.5971,0.7975,1.4923,1.2396,1.9328,2.2425,1.032,0.4082,0.0301,1.0014,1.5425,2.4621,8.4127,1.9967,0.7463,2.8157,0.1175,3.8741,0.589,1.9132,3.0033,3.9874,1.7364,0.5638,1.0196,2.8349,1.6251,0.7954,1.0214,0.1547,4.1122,4.1359,0.5518,0.9857,1.8453,0.021,2.6549,1.3445,0.1886,1.0005,0.014,0.0827,4.3186,1.4125,3.1784,1.788,0.3446,5.3468,1.1002,0.2863,0.5705,5.5386,0.6476,0.3809,0.0547,0.2016,1.7503,4.5097,6.3217,0.1901,0.4195,6.1565,7.8066,3.0132,0.3555,0.2759,1.4157,1.4372,4.075,0.8728,0.1343,1.4155,0.2301,2.3921,0.5359,2.0229,8.9443,0.1986,0.5638,5.6918],"D":[0.4432,1.5244,0.4346,0.5719,0.6433,0.4793,0.6957,1.1359,0.6185,0.6065,0.3435,1.5854,1.2286,1.2048,0.6308,0.6433,1.5546,0.4346,1.253,1.6488,0.4793,1.2048,0.4018,0.8978,0.7379,0.47,1.4658,1.4094,1.1584,0.5608,1.1139,1.8546,1.1139,0.971,1.1814,0.6957,1.4658,0.4793,0.4888,1.6814,0.3788,0.5287,0.8978,1.6814,0.5608,0.971,1.1359,0.4793,1.2778,1.6814,0.4888,1.0099,1.0099,0.3435,1.6488,0.3114,0.4432,0.4018,0.3788,0.4432,0.3643,0.971,1.253,0.6308,0.6185,1.1359,1.3289,1.382,1.7147,0.6433,0.5608,1.2286,0.6065,0.5287,1.5854,0.4609,1.253,0.8803,0.2714,1.5854,1.2048,0.4985,0.394,0.4179,0.6957,0.5185,1.4373,0.4609,0.9337,0.8632,0.9522,1.7833,1.3031,0.4985,0.4888,0.669,0.656,0.5287,0.3503,0.5719,0.8803,1.0099,1.7147,0.5832,0.8632,0.6822,0.5392,0.5608,1.1359,0.7379,0.4793,1.2778,0.6065,0.8978,0.669,0.5719,0.83,0.7379,0.4609,0.5185,0.2188,1.2286,0.8465,0.2936,0.8632,0.3715,0.4985,0.971,0.6308,1.5244,0.4018,0.4346,0.3435,0.7674,0.4609,0.452,0.5084,1.7833,1.7833,0.5084,0.47,0.5608,1.071,0.5947,0.4097,0.4888,0.4793,0.4985,1.3031,0.4888,0.4793,0.5392,1.3289,0.6185,1.6814,1.4094,0.3175,0.5608,1.4094,0.5084,0.4261,1.6488,1.5854,1.4373,0.47,0.2714,0.4346,0.8978,0.8632,0.4888,1.4373,0.8465,1.6814,0.4097,0.4793,0.8465,0.669,0.4432,1.6814,0.6308,1.0923,0.4609,0.8632,1.4658,1.1584,0.5832,0.6433,0.5608,0.5608,0.5832,0.452,1.5546,1.6814,1.4094,0.5947,1.3289,0.5392,1.7147,1.2048,0.6065,0.7379,0.3302,0.5392,0.3643,0.4346,0.4179,0.6822,0.8632,1.382,0.4609,1.382,0.6957,0.7095,0.8978,0.5608,1.0923,0.669,0.4261,0.8978,0.5084,0.4346,0.5832,1.1814,0.4985,0.8465,1.2286,0.4432,1.2778,0.6185,1.0923,1.3289,1.253,0.7674,0.3715,1.4094,0.83,1.253,1.0299,1.2778,1.2286,1.0502,0.4888,0.6308,1.8546,0.4432,0.5608,0.4609,0.4793,1.0099,1.7147,1.3031,0.6065,0.6065,1.3289,0.4346,1.0502,1.2286,0.9522,1.7833,0.7674,1.3289,0.4793,0.5947,0.6957,0.5185,0.7525,0.6822,0.3503,1.1359,0.6822,0.4179,0.7095,1.4658,0.4179,0.6822,1.3289,0.47,0.6065,0.3788,0.4985,1.4373,0.669,1.0099,0.656,0.2714,1.3552,1.0502,0.4432,0.7826,1.4658,0.4985,0.4609,0.4261,0.4609,0.452,1.3552,1.2778,0.4609,0.251,1.4658,1.3031,1.0502,0.5392,0.3788,0.6185,0.3572,1.1359,1.1359,0.4793,0.5185,0.6065,0.5084,0.3643,0.971,1.2778,0.6308,0.4793,1.0299],"sz":[84.8697,79.949,86.8727,72.0208,84.183,78.4144,61.335,87.6689,79.0455,92.6719,93.8005,89.22,91.3498,81.5843,93.8005,78.7582,74.8405,82.8631,84.727,85.7044,78.4144,81.8656,37.3857,64.0775,69.1919,91.2661,70.5673,82.169,61.3443,81.6164,77.4287,84.727,77.4287,80.6546,89.8534,78.4144,70.9832,78.4144,78.4144,85.7044,87.9754,80.4113,73.8564,77.1716,69.4037,78.4144,87.8571,78.4144,68.1981,88.4675,51.9542,71.8173,81.9295,94.5393,81.8656,78.4144,64.0455,66.0578,84.5313,64.0455,92.805,77.2441,84.727,71.0658,71.0658,87.8571,87.1506,66.2603,81.8656,84.183,34.0352,91.3498,84.5313,81.6164,89.22,74.8405,75.2236,76.1489,96.4339,86.2281,81.8656,78.4144,90.5797,74.6733,78.4144,75.3526,76.3641,88.0925,69.1919,74.8405,80.9815,88.0207,92.805,61.335,94.0039,88.8803,72.0208,80.4113,65.7321,72.0208,76.1489,81.8656,81.8656,66.0578,93.8005,78.4144,85.2773,69.4037,69.5157,69.1919,78.4144,67.7108,63.457,64.0775,72.0208,85.651,67.8496,69.1919,65.7321,89.8534,53.6739,74.8405,67.8496,42.0424,61.335,78.4144,84.5313,80.6546,79.0455,79.949,77.7323,86.8727,65.7321,77.2441,74.8405,88.8198,87.3279,80.6546,88.0207,95.78,72.0208,89.6874,86.8727,63.457,77.7323,78.4144,78.4144,93.8005,92.805,40.7459,91.4562,59.8083,78.95,42.0424,91.0084,89.0532,48.2646,89.6874,82.169,95.78,82.4228,81.8656,86.2281,76.3641,72.0208,97.3278,54.2996,71.6784,62.4783,94.0039,76.729,70.5673,77.1716,66.0578,78.4144,91.2661,48.9037,90.8539,88.4675,95.9588,77.4287,74.8405,74.8405,84.727,61.3443,78.4144,78.7582,46.2865,37.9561,89.3929,73.1948,74.8405,91.0084,89.0532,63.457,87.1506,77.2441,84.727,81.5843,65.7321,69.1919,89.8534,77.2441,72.0208,95.6273,82.4228,69.4037,61.335,66.2603,74.8405,81.8656,69.1919,84.5313,73.8564,65.7321,64.616,88.8803,42.0424,71.6784,78.4144,84.6104,89.3929,89.8534,84.5313,70.5673,74.8405,90.8539,60.4337,97.165,64.616,78.95,84.727,77.2441,78.4144,81.8656,65.7321,75.2236,62.5157,68.1981,91.5147,84.727,73.7538,71.0658,84.727,65.7321,85.651,96.7567,66.2603,81.8656,84.727,61.0219,63.457,84.5313,78.95,82.8631,73.4934,91.5147,80.9815,80.6546,59.8083,86.9157,78.4144,78.4144,61.335,69.1919,83.3876,78.4144,84.183,69.5157,62.4783,74.6733,84.5313,84.727,97.5013,69.4037,86.9157,91.2661,73.7538,98.3889,93.8005,76.729,72.0208,71.8173,72.0208,69.1919,72.7305,84.727,84.6104,86.8727,70.5673,75.3526,74.8405,93.8005,88.8198,65.7321,72.7305,67.7108,88.0925,63.9681,70.9832,61.0219,73.4934,85.2773,84.5313,71.0658,56.1081,69.5157,87.6689,91.4562,69.1919,92.6719,61.335,72.0208,77.2441,60.4337,92.0256,78.4144,62.5157],"ser":["przeglad-d_wylot","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","przeglad-odbicia","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","przeglad-d_wylot","ss-razem-1","ss-razem-1","ss-razem-1","przeglad-rozstaw","ss-razem-1","ss-razem-1","seria-szeroka-300","ss-razem-1","ss-razem-1","przeglad-odbicia","ss-razem-1","rozstaw-\u00d8120","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","przeglad-odbicia","ss-razem-1","ss-razem-1","rozstaw-\u00d850","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d8180","ss-razem-1","przeglad-odbicia","ss-razem-1","ss-razem-1","rozstaw-\u00d8120","ss-razem-1","rozstaw-\u00d8180","seria-szeroka-300","ss-razem-1","rozstaw-\u00d850","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","d_wylot-1121-1814","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d8180","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","sciana_rough-1121-1816","ss-razem-1","ss-razem-1","przeglad-d_wylot","ss-razem-1","ss-razem-1","przeglad-sciana_rough","przeglad-d_wylot","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d8120","rozstaw-\u00d8120","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","przeglad-sciana_rough","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","przeglad-stozek_wsp","rozstaw-\u00d850","ss-razem-1","ss-razem-1","przeglad-rozstaw","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","sciana_rough-1121-1816","ss-razem-1","przeglad-stozek_wsp","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d8180","ss-razem-1","ss-razem-1","przeglad-sciana_rough","przeglad-sciana_rough","ss-razem-1","ss-razem-1","d_wylot-1121-1814","ss-razem-1","przeglad-d_wylot","ss-razem-1","rozstaw-\u00d8180","ss-razem-1","ss-razem-1","przeglad-rozstaw","ss-razem-1","ss-razem-1","seria-szeroka-300","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","d_wylot-1121-1814","przeglad-stozek_wsp","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","przeglad-odbicia","rozstaw-\u00d8120","rozstaw-\u00d8180","ss-razem-1","ss-razem-1","przeglad-rozstaw","ss-razem-1","sciana_rough-1121-1816","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","przeglad-d_wylot","przeglad-d_wylot","ss-razem-1","przeglad-rozstaw","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","seria-szeroka-300","ss-razem-1","ss-razem-1","rozstaw-\u00d850","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","material-1121-1815","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d8120","ss-razem-1","przeglad-sciana_rough","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","przeglad-rozstaw","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d850","d_wylot-1121-1814","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","d_wylot-1121-1814","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d8180","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d8120","ss-razem-1","rozstaw-\u00d850","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d850","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d850","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d850","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d8120","ss-razem-1","ss-razem-1","sciana_rough-1121-1816","rozstaw-\u00d850","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d850","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","przeglad-rozstaw","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","ss-razem-1","rozstaw-\u00d880","przeglad-sciana_rough","ss-razem-1"],"hp":{"tau45":{"ell":0.15,"nf":0.01},"tau0":{"ell":0.05,"nf":0.2},"D":{"ell":0.1,"nf":0.2},"sz":{"ell":0.25,"nf":0.0001}}};
+
+/* ===== narzędzia ===== */
+const $ = (id) => document.getElementById(id);
+const sum = (a) => a.reduce((s, v) => s + v, 0);
+const mean = (a) => sum(a) / a.length;
+const variance = (a) => { const m = mean(a); return sum(a.map((v) => (v - m) * (v - m))) / (a.length - 1); };
+function fmt(x, d = 2) {
+  if (x === null || x === undefined || !isFinite(x)) return '–';
+  const s = Math.abs(x) < 0.5 * Math.pow(10, -d) ? (0).toFixed(d) : x.toFixed(d);
+  const [a, b] = s.split('.');
+  const g = a.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return b !== undefined ? g + ',' + b : g;
+}
+const pct = (x, d = 0) => fmt(100 * x, d) + ' %';
+function rngMake(seed) {
+  let a = seed >>> 0;
+  return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+function gauss(r) { let u = 0; while (!u) u = r(); const v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function shuffle(a, r) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function normCdf(z) { // Abramowitz-Stegun
+  const t = 1 / (1 + 0.2316419 * Math.abs(z)); const d = 0.3989423 * Math.exp(-z * z / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  return z > 0 ? 1 - p : p;
+}
+const normPdf = (z) => 0.3989423 * Math.exp(-z * z / 2);
+
+/* ===== regresja liniowa (OLS) ===== */
+function inv(M) {
+  const n = M.length; const A = M.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    [A[c], A[p]] = [A[p], A[c]]; const d = A[c][c];
+    for (let j = 0; j < 2 * n; j++) A[c][j] /= d;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = A[r][c]; if (f) for (let j = 0; j < 2 * n; j++) A[r][j] -= f * A[c][j]; }
+  }
+  return A.map((r) => r.slice(n));
+}
+function ols(X, y) {
+  const n = X.length, m = X[0].length;
+  const XtX = Array.from({ length: m }, () => new Array(m).fill(0)), Xty = new Array(m).fill(0);
+  for (let i = 0; i < n; i++) for (let a = 0; a < m; a++) { Xty[a] += X[i][a] * y[i]; for (let b = 0; b < m; b++) XtX[a][b] += X[i][a] * X[i][b]; }
+  const Ci = inv(XtX); const b = Ci.map((r) => sum(r.map((v, j) => v * Xty[j])));
+  const fit = X.map((r) => sum(r.map((v, j) => v * b[j]))); const res = y.map((v, i) => v - fit[i]);
+  const sse = sum(res.map((v) => v * v)); const my = mean(y); const sst = sum(y.map((v) => (v - my) * (v - my)));
+  const dof = n - m; const s2 = sse / dof;
+  return { b, se: Ci.map((r, i) => Math.sqrt(s2 * r[i])), fit, res, r2: 1 - sse / sst, r2adj: 1 - (sse / dof) / (sst / (n - 1)), sigma: Math.sqrt(s2), dof, n };
+}
+
+/* ===== proces gaussowski ===== */
+function chol(K, n) {
+  const L = new Float64Array(n * n);
+  for (let i = 0; i < n; i++) for (let j = 0; j <= i; j++) {
+    let s = K[i * n + j]; for (let k = 0; k < j; k++) s -= L[i * n + k] * L[j * n + k];
+    L[i * n + j] = i === j ? Math.sqrt(Math.max(s, 1e-12)) : s / L[j * n + j];
+  }
+  return L;
+}
+function fsolve(L, n, b) { const x = new Float64Array(n); for (let i = 0; i < n; i++) { let s = b[i]; for (let k = 0; k < i; k++) s -= L[i * n + k] * x[k]; x[i] = s / L[i * n + i]; } return x; }
+function bsolve(L, n, b) { const x = new Float64Array(n); for (let i = n - 1; i >= 0; i--) { let s = b[i]; for (let k = i + 1; k < n; k++) s -= L[k * n + i] * x[k]; x[i] = s / L[i * n + i]; } return x; }
+function d2(a, b) { let s = 0; for (let j = 0; j < a.length; j++) { const t = a[j] - b[j]; s += t * t; } return s; }
+function gpFit(X, y, ell, nf) {
+  const n = X.length, d = X[0].length;
+  const o = ols(X.map((r) => [1, ...r]), y); const res = o.res;
+  const s2 = Math.max(sum(res.map((v) => v * v)) / n, 1e-9);
+  const K = new Float64Array(n * n); const il = 1 / (2 * ell * ell);
+  for (let i = 0; i < n; i++) for (let j = 0; j <= i; j++) { const v = s2 * Math.exp(-d2(X[i], X[j]) * il); K[i * n + j] = v; K[j * n + i] = v; }
+  for (let i = 0; i < n; i++) K[i * n + i] += nf * s2;
+  const L = chol(K, n); const alpha = bsolve(L, n, fsolve(L, n, res));
+  return { X, y, n, d, b: o.b, ell, nf, s2, L, alpha, il };
+}
+function gpPred(g, x, wantSd) {
+  const { n, X, alpha, b, s2, il } = g; const k = new Float64Array(n); let m = b[0]; for (let j = 0; j < x.length; j++) m += b[j + 1] * x[j];
+  for (let i = 0; i < n; i++) { k[i] = s2 * Math.exp(-d2(x, X[i]) * il); m += k[i] * alpha[i]; }
+  if (!wantSd) return [m, 0];
+  const v = fsolve(g.L, n, k); let q = 0; for (let i = 0; i < n; i++) q += v[i] * v[i];
+  return [m, Math.sqrt(Math.max(g.s2 - q, 1e-12))];
+}
+function gpLOO(g) { // diagonala K^-1 z odwrotności L
+  const { n, L, alpha, y, nf, s2 } = g; const dg = new Float64Array(n);
+  const col = new Float64Array(n);
+  for (let j = 0; j < n; j++) {
+    col.fill(0); col[j] = 1 / L[j * n + j];
+    for (let i = j + 1; i < n; i++) { let s = 0; for (let k = j; k < i; k++) s -= L[i * n + k] * col[k]; col[i] = s / L[i * n + i]; }
+    for (let i = j; i < n; i++) dg[j] += col[i] * col[i]; // (Linv[i,j])^2 sumowane po i => diag(Kinv)_j
+  }
+  const my = mean(y); let sse = 0, sst = 0, cov = 0, nlpd = 0; const e = new Float64Array(n), sd = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    e[i] = alpha[i] / dg[i]; sd[i] = Math.sqrt(1 / dg[i]); sse += e[i] * e[i]; sst += (y[i] - my) * (y[i] - my);
+    if (Math.abs(e[i]) <= 2 * sd[i]) cov++;
+    nlpd += 0.5 * (Math.log(2 * Math.PI) - Math.log(dg[i]) + e[i] * e[i] * dg[i]);
+  }
+  return { q2: 1 - sse / sst, cover: cov / n, nlpd, rmse: Math.sqrt(sse / n), e, sd };
+}
+function tuneGP(X, y, ells, nfs) {
+  let best = null;
+  for (const ell of ells) for (const nf of nfs) {
+    let g; try { g = gpFit(X, y, ell, nf); } catch (e) { continue; }
+    const l = gpLOO(g); if (!isFinite(l.nlpd)) continue;
+    if (!best || l.nlpd < best.nlpd) best = { ell, nf, nlpd: l.nlpd, q2: l.q2, cover: l.cover };
+  }
+  return best;
+}
+
+/* ===== dane: punkty unikalne, zmienne wejściowe ===== */
+const NAZWY = ['smukłość t/Ø', 'stożek', 'prześwit φ', 'grubość t'];
+const PTS = (() => {
+  const m = new Map();
+  for (let i = 0; i < RAW.n; i++) { const key = [RAW.d[i], RAW.k[i], RAW.p[i], RAW.t[i]].join('|'); if (!m.has(key)) m.set(key, []); m.get(key).push(i); }
+  const lm = (idx, a) => { const v = idx.map((i) => a[i]).filter((x) => x > 0); return v.length ? mean(v.map(Math.log)) : NaN; };
+  const out = [];
+  for (const idx of m.values()) {
+    const i = idx[0];
+    out.push({ d: RAW.d[i], k: RAW.k[i], p: RAW.p[i], t: RAW.t[i], s: RAW.s[i], phi: RAW.phi[i], idx, n: idx.length,
+      l0: lm(idx, RAW.tau0), l45: lm(idx, RAW.tau45), lD: lm(idx, RAW.D), lsz: lm(idx, RAW.sz) });
+  }
+  return out;
+})();
+const inpRaw = (p) => [Math.log(p.s), p.k, Math.log(p.phi), p.t];
+const RAWIN = PTS.map(inpRaw);
+const LO = [0, 1, 2, 3].map((j) => Math.min(...RAWIN.map((r) => r[j])));
+const HI = [0, 1, 2, 3].map((j) => Math.max(...RAWIN.map((r) => r[j])));
+const nrm = (v) => v.map((x, j) => (x - LO[j]) / (HI[j] - LO[j]));
+const toU = (s, k, phi, t) => nrm([Math.log(s), k, Math.log(phi), t]);
+const OUTS = {
+  tau0: { key: 'l0', nm: 'τ0', un: '%', full: 'τ0 (światło na wprost)' },
+  tau45: { key: 'l45', nm: 'τ45', un: '%', full: 'τ45 (światło pod 45°)' },
+  D: { key: 'lD', nm: 'D_niewid', un: 'm', full: 'D_niewid (m)' },
+  sz: { key: 'lsz', nm: 'sztywność', un: '% litej', full: 'sztywność (% litej)' },
+};
+function dataset(out, idxs) {
+  const key = OUTS[out].key; const sel = (idxs || PTS.map((_, i) => i)).filter((i) => isFinite(PTS[i][key]));
+  return { ids: sel, X: sel.map((i) => nrm(RAWIN[i])), y: sel.map((i) => PTS[i][key]) };
+}
+const ELLS = [0.05, 0.1, 0.15, 0.25, 0.4, 0.6, 0.9], NFS = [1e-4, 1e-3, 0.01, 0.05, 0.2];
+const MODEL = {};
+function getModel(out) {
+  if (!MODEL[out]) {
+    const ds = dataset(out); const h = (RAW.hp && RAW.hp[out]) || tuneGP(ds.X, ds.y, ELLS, NFS);
+    MODEL[out] = { g: gpFit(ds.X, ds.y, h.ell, h.nf), ell: h.ell, nf: h.nf, ds };
+  }
+  return MODEL[out];
+}
+
+/* ===== plany punktów w kwadracie jednostkowym ===== */
+function halton(i, b) { let f = 1, r = 0; while (i > 0) { f /= b; r += f * (i % b); i = Math.floor(i / b); } return r; }
+function designGrid(N) { const m = Math.max(1, Math.round(Math.sqrt(N))); const o = []; for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) o.push([(i + 0.5) / m, (j + 0.5) / m]); return o; }
+function designRandom(N, r) { return Array.from({ length: N }, () => [r(), r()]); }
+function designLHS(N, r) { const a = shuffle([...Array(N).keys()], r), b = shuffle([...Array(N).keys()], r); return a.map((v, i) => [(v + r()) / N, (b[i] + r()) / N]); }
+function designHalton(N) { return Array.from({ length: N }, (_, i) => [halton(i + 1, 2), halton(i + 1, 3)]); }
+function designOFAT(N) { const o = [[0.5, 0.5]]; const h = Math.max(1, Math.floor((N - 1) / 2)); for (let i = 0; i < h; i++) { const v = (i + 0.5) / h; o.push([v, 0.5]); o.push([0.5, v]); } return o.slice(0, Math.max(N, 1)); }
+function designMaximin(N, r) {
+  const o = [[0.5, 0.5]];
+  while (o.length < N) {
+    let best = null, bd = -1;
+    for (let c = 0; c < 400; c++) { const q = [r(), r()]; let m = 9; for (const p of o) m = Math.min(m, d2(q, p)); if (m > bd) { bd = m; best = q; } }
+    o.push(best);
+  }
+  return o;
+}
+const PROBE = (() => { const a = []; const m = 40; for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) a.push([(i + 0.5) / m, (j + 0.5) / m]); return a; })();
+function maxGap(des) { let g = 0; for (const q of PROBE) { let m = 9; for (const p of des) { const t = d2(q, p); if (t < m) m = t; } if (m > g) g = m; } return Math.sqrt(g); }
+
+/* ===== Plotly: motyw i rysowanie ===== */
+function T() { const cs = getComputedStyle(document.documentElement); const g = (n) => cs.getPropertyValue(n).trim(); return { fg: g('--fg'), muted: g('--muted'), grid: g('--grid'), acc: g('--acc'), acc2: g('--acc2'), ok: g('--ok'), bad: g('--bad'), bd: g('--bd') }; }
+function merge(a, b) { const o = Object.assign({}, a); for (const k in b) o[k] = (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object') ? merge(a[k], b[k]) : b[k]; return o; }
+const CFG = { displayModeBar: false, responsive: true };
+const MOB = () => window.innerWidth < 600;
+function fmtTick(v) { return v >= 1 ? fmt(v, 0) : fmt(v, Math.min(3, Math.ceil(-Math.log10(v) - 1e-9))); }
+function lax(lo, hi, title, extra) { // oś logarytmiczna z czytelnymi podziałkami 1, 3 ×10^n
+  const tv = []; for (let e = Math.floor(Math.log10(lo)) - 1; e <= Math.ceil(Math.log10(hi)); e++) for (const m of [1, 3]) { const v = m * Math.pow(10, e); if (v >= lo * 0.999 && v <= hi * 1.001) tv.push(v); }
+  return Object.assign({ type: 'log', range: [Math.log10(lo), Math.log10(hi)], tickvals: tv, ticktext: tv.map(fmtTick), exponentformat: 'none', title: { text: title } }, extra || {});
+}
+function layout(o) {
+  const t = T(); const ax = { gridcolor: t.grid, zerolinecolor: t.grid, linecolor: t.bd, automargin: true, tickfont: { size: 11 }, title: { font: { size: 12 } } };
+  return merge({ paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { color: t.fg, size: 12 }, margin: MOB() ? { l: 48, r: 8, t: 34, b: 52 } : { l: 58, r: 14, t: 34, b: 52 }, separators: ', ', xaxis: ax, yaxis: ax, legend: { orientation: 'h', y: -0.22, font: { size: 11 } }, hoverlabel: { font: { size: 12 } } }, o);
+}
+function draw(id, data, lay) { return Plotly.react(id, data, layout(lay || {}), CFG); }
+
+/* ===== kontrolki ===== */
+function ctl(containerId, specs, onChange) {
+  const c = $(containerId); c.innerHTML = '';
+  for (const s of specs) {
+    const lab = document.createElement('label');
+    if (s.type === 'select') {
+      lab.innerHTML = `${s.label}<select id="${s.id}">${s.options.map((o) => `<option value="${o[0]}"${o[0] === s.value ? ' selected' : ''}>${o[1]}</option>`).join('')}</select>`;
+      c.appendChild(lab); lab.querySelector('select').addEventListener('change', () => onChange(s.id));
+    } else if (s.type === 'check') {
+      lab.style.cssText = 'flex-direction:row;align-items:center;gap:8px';
+      lab.innerHTML = `<input type="checkbox" id="${s.id}"${s.value ? ' checked' : ''} style="width:22px;height:22px;accent-color:var(--acc)"><span>${s.label}</span>`;
+      c.appendChild(lab); lab.querySelector('input').addEventListener('change', () => onChange(s.id));
+    } else if (s.type === 'button') {
+      lab.innerHTML = `<button id="${s.id}" class="${s.cls || ''}">${s.label}</button>`;
+      c.appendChild(lab); lab.querySelector('button').addEventListener('click', () => onChange(s.id));
+    } else {
+      lab.innerHTML = `<span>${s.label}: <b id="v_${s.id}"></b> ${s.unit || ''}</span><input type="range" id="${s.id}" min="${s.min}" max="${s.max}" step="${s.step}" value="${s.value}">`;
+      c.appendChild(lab); const inp = lab.querySelector('input'); const out = lab.querySelector('b');
+      const show = () => { out.textContent = s.show ? s.show(+inp.value) : fmt(+inp.value, s.dec === undefined ? 0 : s.dec); };
+      show(); inp.addEventListener('input', () => { show(); onChange(s.id); });
+    }
+  }
+}
+const val = (id) => +$(id).value;
+const setVal = (id, v) => { const e = $(id); e.value = v; e.dispatchEvent(new Event('input')); };
+function debounce(f, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => f(...a), ms); }; }
+function table(rows, head) { return '<table><tr>' + head.map((h) => `<th>${h}</th>`).join('') + '</tr>' + rows.map((r) => '<tr>' + r.map((c) => `<td>${c}</td>`).join('') + '</tr>').join('') + '</table>'; }
+
+window.__tuneHP = () => { const o = {}; for (const k of Object.keys(OUTS)) { const ds = dataset(k); const h = tuneGP(ds.X, ds.y, ELLS, NFS); o[k] = { ell: h.ell, nf: h.nf }; } return JSON.stringify(o); };
+
+</script>
+<script>
+'use strict';
+const CH = {};
+const COL = () => { const t = T(); return { a: t.acc, b: t.acc2, ok: t.ok, bad: t.bad, mu: t.muted, fg: t.fg }; };
+const OUTSEL = [['tau45', 'τ45 (światło pod 45°) [%]'], ['tau0', 'τ0 (światło na wprost) [%]'], ['D', 'D_niewid [m]'], ['sz', 'sztywność [% litej]']];
+const RAWOUT = { tau0: RAW.tau0, tau45: RAW.tau45, D: RAW.D, sz: RAW.sz };
+const HEX = Math.PI / (2 * Math.sqrt(3));
+const later = (f) => setTimeout(f, 30);
+
+/* ---------- 1. Problem ---------- */
+function fmtTime(min) {
+  if (min < 120) return fmt(min, 0) + ' min';
+  if (min < 2880) return fmt(min / 60, 1) + ' h';
+  if (min < 60 * 24 * 730) return fmt(min / 1440, 0) + ' dni';
+  return fmt(min / 525600, 0) + ' lat';
+}
+CH.r1 = {
+  init() {
+    ctl('c1', [
+      { id: 'L1', label: 'Poziomy na zmienną L', min: 2, max: 12, step: 1, value: 5 },
+      { id: 'd1', label: 'Liczba zmiennych d', min: 2, max: 9, step: 1, value: 6 },
+      { id: 'tr1', label: 'Czas jednego renderu', min: 1, max: 60, step: 1, value: 10, unit: 'min' },
+      { id: 'wk1', label: 'Równoległe zadania', min: 1, max: 8, step: 1, value: 1 },
+    ], () => this.render());
+    this.render();
+  },
+  render() {
+    const L = val('L1'), d = val('d1'), tr = val('tr1'), wk = val('wk1'); const c = COL();
+    const ds = [2, 3, 4, 5, 6, 7, 8, 9];
+    draw('p1', [
+      { type: 'bar', name: 'siatka pełna L^d', x: ds, y: ds.map((q) => Math.pow(L, q)), marker: { color: ds.map((q) => (q === d ? c.bad : c.mu)) } },
+      { type: 'bar', name: 'plan przestrzenny 10·d', x: ds, y: ds.map((q) => 10 * q), marker: { color: ds.map((q) => (q === d ? c.ok : c.a)) } },
+    ], { barmode: 'group', xaxis: { title: { text: 'liczba zmiennych d [–]' }, dtick: 1 }, yaxis: { type: 'log', title: { text: 'liczba renderów [–], skala log' } }, margin: { b: 70 } });
+    const N = Math.pow(L, d), plan = 10 * d;
+    $('w1').innerHTML = `<b class="t">Co z tego wynika dla otworków:</b> przy ${d} zmiennych po ${L} poziomów siatka to <b>${fmt(N, 0)}</b> renderów, czyli ok. <b>${fmtTime(N * tr / wk)}</b> pracy. Plan przestrzenny 10·d to <b>${plan}</b> renderów (${fmtTime(plan * tr / wk)}), czyli ${fmt(N / plan, 0)} razy mniej. W tym projekcie zmiennych wymiarowych jest cztery (Ø, stożek, rozstaw, grubość), a dane liczą ${PTS.length} różnych punktów, więc cała analiza poniżej opiera się na planie, a nie na siatce. <span class="note">Czas renderu to założenie suwaka, nie pomiar.</span>`;
+  },
+};
+
+/* ---------- 2. Zmienne bezwymiarowe ---------- */
+function r2single(x, y) {
+  const X = [], Y = []; for (let i = 0; i < x.length; i++) if (x[i] > 0 && y[i] > 0) { X.push([1, Math.log(x[i])]); Y.push(Math.log(y[i])); }
+  const o = ols(X, Y); return { r2: o.r2, a: o.b[0], b: o.b[1], X, Y };
+}
+const CAND = [
+  { k: 'phi', nm: 'prześwit φ', un: '%', a: RAW.phi }, { k: 'd', nm: 'Ø wylotu', un: 'µm', a: RAW.d }, { k: 'p', nm: 'rozstaw', un: 'µm', a: RAW.p },
+  { k: 's', nm: 'smukłość t/Ø', un: '–', a: RAW.s }, { k: 'k', nm: 'stożek', un: '–', a: RAW.k }, { k: 't', nm: 'grubość', un: 'mm', a: RAW.t },
+];
+CH.r2 = {
+  init() {
+    ctl('c2', [
+      { id: 'o2', type: 'select', label: 'Wynik', value: 'tau0', options: [OUTSEL[1], OUTSEL[0], OUTSEL[2], OUTSEL[3]] },
+      { id: 'x2', type: 'select', label: 'Oś X wykresu rozrzutu', value: 'phi', options: CAND.map((c) => [c.k, `${c.nm} [${c.un}]`]) },
+      { id: 'sd2', label: 'Twój otwór: Ø wylotu', min: 30, max: 400, step: 5, value: 80, unit: 'µm' },
+      { id: 'sp2', label: 'Twój otwór: rozstaw', min: 150, max: 1600, step: 10, value: 400, unit: 'µm' },
+    ], () => this.render());
+    this.render();
+  },
+  render() {
+    const out = $('o2').value, xk = $('x2').value, y = RAWOUT[out]; const c = COL(); const o = OUTS[out];
+    const rs = CAND.map((q) => ({ q, ...r2single(q.a, y) }));
+    const best = Math.max(...rs.map((r) => r.r2));
+    draw('p2a', [{ type: 'bar', x: rs.map((r) => r.q.nm), y: rs.map((r) => r.r2), marker: { color: rs.map((r) => (r.r2 === best ? c.ok : c.a)) }, text: rs.map((r) => fmt(r.r2, 2)), textposition: 'outside', cliponaxis: false }],
+      { title: { text: `R² dla ln(${o.nm}) ~ ln(x), jedna zmienna naraz`, font: { size: 13 } }, yaxis: { range: [0, 1.1], title: { text: 'R² [–]' } }, xaxis: { tickangle: -30 } });
+    const sel = rs.find((r) => r.q.k === xk); const xs = [], ys = [];
+    for (let i = 0; i < y.length; i++) if (sel.q.a[i] > 0 && y[i] > 0) { xs.push(sel.q.a[i]); ys.push(y[i]); }
+    const xmin = Math.min(...xs), xmax = Math.max(...xs);
+    draw('p2b', [
+      { type: 'scatter', mode: 'markers', x: xs, y: ys, name: 'symulacje', marker: { size: 5, color: c.a, opacity: 0.55 } },
+      { type: 'scatter', mode: 'lines', x: [xmin, xmax], y: [xmin, xmax].map((v) => Math.exp(sel.a + sel.b * Math.log(v))), name: `dopasowanie, R² = ${fmt(sel.r2, 2)}`, line: { color: c.b, width: 2 } },
+    ], { title: { text: `${o.nm} vs ${sel.q.nm}`, font: { size: 13 } }, xaxis: lax(xmin * 0.9, xmax * 1.1, `${sel.q.nm} [${sel.q.un}]`), yaxis: lax(Math.min(...ys) * 0.8, Math.max(...ys) * 1.25, `${o.nm} [${o.un}]`) });
+    // dane do tekstu
+    const phiS = r2single(RAW.phi, RAW.tau0), pD = ols(RAW.D.map((_, i) => [1, Math.log(RAW.p[i]), Math.log(RAW.phi[i])]), RAW.D.map(Math.log));
+    const dd = val('sd2'), pp = val('sp2'); const phi = 100 * HEX * Math.pow(dd / pp, 2); const tau0 = Math.exp(phiS.a) * Math.pow(phi, phiS.b);
+    const r2phi = r2single(RAW.phi, RAW.tau0).r2, r2d = r2single(RAW.d, RAW.tau0).r2, r2p = r2single(RAW.p, RAW.tau0).r2;
+    const r2Dd = r2single(RAW.d, RAW.D).r2, r2Dphi = r2single(RAW.phi, RAW.D).r2;
+    $('w2').innerHTML = `<b class="t">Co z tego wynika dla otworków:</b> τ0 jest funkcją prawie samego prześwitu: R² = <b>${fmt(r2phi, 3)}</b> dla φ, a tylko ${fmt(r2d, 2)} dla Ø i ${fmt(r2p, 3)} dla rozstawu. Dla otworu Ø ${fmt(dd, 0)} µm i rozstawu ${fmt(pp, 0)} µm: φ = 90,69 %·(Ø/rozstaw)² = <b>${fmt(phi, 2)} %</b>, więc τ0 ≈ <b>${fmt(tau0, 2)} %</b>${phi > 35 ? ' <span class="nie">(poza zakresem danych, φ &gt; 35 %)</span>' : ''}. Zamiast dwóch zmiennych wystarczy jedna. Ale D_niewid tak nie działa: zależy od Ø (R² = ${fmt(r2Dd, 2)}), a od samego φ słabo (R² = ${fmt(r2Dphi, 2)}). Po podwojeniu Ø i rozstawu φ i τ0 zostają, a D_niewid rośnie ok. ${fmt(Math.pow(2, pD.b[1]), 2)} raza (wykładnik przy rozstawie: ${fmt(pD.b[1], 2)}). Skala ma więc znaczenie dla widoczności, nie dla światła na wprost.`;
+  },
+};
+
+/* ---------- 3. Plany punktów ---------- */
+const DTYPES = [['ofat', 'jeden parametr naraz (krzyż)'], ['grid', 'siatka'], ['rand', 'losowe'], ['lhs', 'LHS'], ['halton', 'Halton'], ['maximin', 'maximin (zachłanny)']];
+function gapInfo(des) { let g = 0, pt = [0, 0]; for (const q of PROBE) { let m = 9; for (const p of des) { const t = d2(q, p); if (t < m) m = t; } if (m > g) { g = m; pt = q; } } return [Math.sqrt(g), pt]; }
+function makeDesign(type, N, seed) {
+  const r = rngMake(seed);
+  if (type === 'ofat') return designOFAT(N); if (type === 'grid') return designGrid(N); if (type === 'rand') return designRandom(N, r);
+  if (type === 'lhs') return designLHS(N, r); if (type === 'halton') return designHalton(N); return designMaximin(N, r);
+}
+CH.r3 = {
+  seed: 5, timer: null, cache: null,
+  init() {
+    ctl('c3', [
+      { id: 'ty3', type: 'select', label: 'Rodzaj planu', value: 'lhs', options: DTYPES },
+      { id: 'N3', label: 'Liczba punktów N', min: 4, max: 64, step: 1, value: 24 },
+      { id: 'pl3', type: 'button', label: '▶ Animacja N = 4 … 64' },
+      { id: 'nw3', type: 'button', label: 'Nowe losowanie', cls: 'sec' },
+    ], (id) => {
+      if (id === 'nw3') { this.seed++; this.cache = null; }
+      if (id === 'pl3') { this.play(); return; }
+      this.render();
+    });
+    this.render();
+  },
+  play() {
+    clearInterval(this.timer); let n = 4; setVal('N3', n);
+    this.timer = setInterval(() => { n += 2; if (n > 64) { clearInterval(this.timer); return; } setVal('N3', n); }, 300);
+  },
+  curves() {
+    if (this.cache) return this.cache; const Ns = []; for (let n = 4; n <= 64; n += 4) Ns.push(n);
+    const out = {}; for (const [k] of DTYPES) out[k] = [];
+    const mm = designMaximin(64, rngMake(this.seed)), ha = designHalton(64);
+    for (const n of Ns) for (const [k] of DTYPES) {
+      const des = k === 'maximin' ? mm.slice(0, n) : k === 'halton' ? ha.slice(0, n) : makeDesign(k, n, this.seed + n);
+      out[k].push(gapInfo(des)[0]);
+    }
+    this.cache = { Ns, out }; return this.cache;
+  },
+  render() {
+    const type = $('ty3').value, N = val('N3'); const c = COL();
+    const des = makeDesign(type, N, this.seed + N); const [gap, pt] = gapInfo(des);
+    const xv = [3, 5, 10, 20, 30], yv = [1, 2, 4, 8, 12];
+    const circ = []; for (let a = 0; a <= 64; a++) circ.push([pt[0] + gap * Math.cos(a * Math.PI / 32), pt[1] + gap * Math.sin(a * Math.PI / 32)]);
+    draw('p3a', [
+      { type: 'scatter', mode: 'lines', x: circ.map((q) => q[0]), y: circ.map((q) => q[1]), line: { color: c.bad, width: 2, dash: 'dot' }, name: `największa luka = ${fmt(100 * gap, 0)} % boku` },
+      { type: 'scatter', mode: 'markers', x: des.map((q) => q[0]), y: des.map((q) => q[1]), name: `${DTYPES.find((d) => d[0] === type)[1]}, N = ${des.length}`, marker: { size: 8, color: c.a, line: { width: 1, color: c.fg } } },
+    ], { xaxis: { range: [-0.03, 1.03], tickvals: xv.map((v) => Math.log10(v / 3)), ticktext: xv.map(String), title: { text: 'prześwit φ [%] (skala log)' }, scaleanchor: 'y' }, yaxis: { range: [-0.03, 1.03], tickvals: yv.map((v) => Math.log(v) / Math.log(12)), ticktext: yv.map(String), title: { text: 'smukłość t/Ø [–] (skala log)' } }, margin: { b: 80 } });
+    const cv = this.curves();
+    draw('p3b', DTYPES.map(([k, nm]) => ({ type: 'scatter', mode: 'lines', x: cv.Ns, y: cv.out[k].map((v) => 100 * v), name: nm, line: { width: k === type ? 4 : 1.6 }, opacity: k === type ? 1 : 0.65 })),
+      { xaxis: { title: { text: 'liczba punktów N [–]' } }, yaxis: { title: { text: 'największa luka [% boku kwadratu]' }, rangemode: 'tozero' }, legend: { y: -0.4 }, margin: { b: 110 } });
+    const row = DTYPES.map(([k, nm]) => `${nm.split(' (')[0]}: ${fmt(100 * gapInfo(makeDesign(k, N, this.seed + N))[0], 0)} %`).join('; ');
+    $('w3').innerHTML = `<b class="t">Co z tego wynika dla otworków:</b> przy N = ${N} największa luka (w % boku przestrzeni smukłość × prześwit) wynosi: ${row}. Krzyż „jeden parametr naraz” zostawia narożniki puste, czyli np. duży prześwit przy dużej smukłości, którego nie sprawdzisz nigdy. W 2 wymiarach siatka o N = 16, 25 lub 36 ma małą lukę, ale w 4 wymiarach potrzebowałaby m⁴ punktów, a każda zmienna miałaby tylko m różnych wartości. Maximin i Halton można rozbudowywać punkt po punkcie (animacja), LHS i siatka wymagają znać N z góry. <span class="note">Luka liczona na 1600 punktach próbnych, dwie zmienne dla czytelności; w projekcie są cztery.</span>`;
+  },
+};
+
+/* ---------- 4. Przesiewanie ---------- */
+function morris(g, r, rng) {
+  const d = g.d, del = 2 / 3, lev = [0, 1 / 3, 2 / 3, 1]; const EE = Array.from({ length: d }, () => []);
+  for (let t = 0; t < r; t++) {
+    const x = Array.from({ length: d }, () => lev[Math.floor(rng() * 4)]); let f0 = gpPred(g, x)[0];
+    for (const i of shuffle([...Array(d).keys()], rng)) {
+      const up = x[i] + del <= 1 + 1e-9, dn = x[i] - del >= -1e-9; const dir = up && dn ? (rng() < 0.5 ? 1 : -1) : up ? 1 : -1;
+      x[i] += dir * del; const f1 = gpPred(g, x)[0]; EE[i].push((f1 - f0) / (dir * del)); f0 = f1;
+    }
+  }
+  return EE.map((e) => ({ mus: mean(e.map(Math.abs)), mu: mean(e), sig: e.length > 1 ? Math.sqrt(variance(e)) : 0 }));
+}
+function sobol(g, N, rng) {
+  const d = g.d, A = Array.from({ length: N }, () => Array.from({ length: d }, rng)), B = Array.from({ length: N }, () => Array.from({ length: d }, rng));
+  const fA = A.map((x) => gpPred(g, x)[0]), fB = B.map((x) => gpPred(g, x)[0]); const V = variance(fA.concat(fB)); const S1 = [], ST = [];
+  for (let i = 0; i < d; i++) {
+    const fAB = A.map((x, n) => { const z = x.slice(); z[i] = B[n][i]; return gpPred(g, z)[0]; });
+    S1.push(mean(fB.map((v, n) => v * (fAB[n] - fA[n]))) / V); ST.push(0.5 * mean(fA.map((v, n) => (v - fAB[n]) * (v - fAB[n]))) / V);
+  }
+  return { S1, ST, V };
+}
+CH.r4 = {
+  init() {
+    ctl('c4', [
+      { id: 'o4', type: 'select', label: 'Wynik', value: 'tau45', options: OUTSEL },
+      { id: 'rm4', label: 'Trajektorie Morrisa r', min: 2, max: 50, step: 1, value: 10 },
+      { id: 'N4', label: 'Próbka Sobola N', min: 200, max: 3000, step: 100, value: 1000 },
+      { id: 'sd4', label: 'Ziarno losowania', min: 1, max: 20, step: 1, value: 1 },
+    ], () => this.go());
+    this.go();
+  },
+  go: debounce(function () { CH.r4.render(); }, 120),
+  render() {
+    const out = $('o4').value; $('w4').innerHTML = '<span class="spin">liczę model zastępczy…</span>';
+    later(() => {
+      const m = getModel(out), g = m.g, r = val('rm4'), N = val('N4'), seed = val('sd4'); const c = COL();
+      const M = morris(g, r, rngMake(100 + seed)), S = sobol(g, N, rngMake(200 + seed));
+      draw('p4a', [{ type: 'scatter', mode: 'markers+text', x: M.map((q) => q.mus), y: M.map((q) => q.sig), text: NAZWY, textposition: 'top center', cliponaxis: false, marker: { size: 12, color: c.a } }],
+        { title: { text: `Morris: ${r} trajektorii = ${r * 5} przypadków`, font: { size: 13 } }, xaxis: { title: { text: 'μ* [Δln wyniku na cały zakres]' }, rangemode: 'tozero' }, yaxis: { title: { text: 'σ [Δln wyniku na cały zakres]' }, rangemode: 'tozero' }, margin: { t: 44 } });
+      draw('p4b', [
+        { type: 'bar', name: 'S1 (sama zmienna)', x: NAZWY, y: S.S1.map((v) => Math.max(v, 0)), marker: { color: c.a } },
+        { type: 'bar', name: 'ST (z interakcjami)', x: NAZWY, y: S.ST.map((v) => Math.max(v, 0)), marker: { color: c.b } },
+      ], { barmode: 'group', title: { text: `Sobol na modelu GP: N·(d+2) = ${fmt(N * 6, 0)} wywołań`, font: { size: 13 } }, yaxis: { title: { text: 'indeks [–]' }, range: [0, 1.05] }, xaxis: { tickangle: -20 }, margin: { t: 44, b: 80 } });
+      const mx = Math.max(...M.map((q) => q.mus)); const frz = [];
+      const rows = NAZWY.map((nm, i) => {
+        const ok = S.ST[i] < 0.05 && M[i].mus < 0.1 * mx; if (ok) frz.push(nm);
+        return [nm, fmt(M[i].mus, 2), fmt(M[i].sig, 2), fmt(S.S1[i], 2), fmt(S.ST[i], 2), ok ? '<span class="tak">zamrozić</span>' : S.ST[i] < 0.1 ? 'raczej mało ważny' : '<span class="nie">zostawić</span>'];
+      });
+      $('t4').innerHTML = table(rows, ['Zmienna', 'μ*', 'σ', 'S1', 'ST', 'Decyzja']);
+      const top = NAZWY.map((nm, i) => [nm, S.ST[i]]).sort((a, b) => b[1] - a[1]);
+      $('w4').innerHTML = `<b class="t">Co z tego wynika dla otworków</b> (wynik: ${OUTS[out].nm}): najważniejsze są <b>${top[0][0]}</b> (ST ${fmt(top[0][1], 2)}) i <b>${top[1][0]}</b> (ST ${fmt(top[1][1], 2)}). ${frz.length ? 'Można zamrozić: <b>' + frz.join(', ') + '</b>.' : 'Przy tym wyniku żadnej zmiennej nie wolno jeszcze zamrozić.'} Zmień wynik w menu, bo ranking zależy od tego, co optymalizujesz: grubość t ma ledwie dwie wartości (0,4 i 0,5 mm), więc jej wpływ jest z natury mały. Zmniejsz r do 2–3 i zmień ziarno: μ* skacze, a przy r ≥ 10 ranking się stabilizuje. <span class="note">Zakresy: cały prostopadłościan danych, więc rogi bywają ekstrapolacją.</span>`;
+    });
+  },
+};
+
+/* ---------- 5. Dopasowanie i istotność ---------- */
+function typeA(out) { // tylko prawdziwe powtórzenia: ten sam przypadek, ta sama seria, inne ziarno szumu
+  const key = { tau0: RAW.tau0, tau45: RAW.tau45, D: RAW.D, sz: RAW.sz }[out]; const gr = []; let ss = 0, dof = 0, skip = 0;
+  for (const p of PTS) if (p.n > 1) {
+    if (!p.idx.every((i) => RAW.ser[i] === RAW.ser[p.idx[0]])) { skip++; continue; }
+    const v = p.idx.map((i) => key[i]).filter((x) => x > 0).map(Math.log); if (v.length < 2) continue;
+    const s = Math.sqrt(variance(v)); gr.push({ n: v.length, s, m: Math.exp(mean(v)) }); ss += variance(v) * (v.length - 1); dof += v.length - 1;
+  }
+  return { gr, sp: dof ? Math.sqrt(ss / dof) : 0, dof, skip };
+}
+CH.r5 = {
+  init() {
+    ctl('c5', [
+      { id: 'o5', type: 'select', label: 'Wynik', value: 'tau45', options: OUTSEL },
+      { id: 'f0', type: 'check', label: 'ln smukłość', value: true }, { id: 'f1', type: 'check', label: 'ln stożek', value: true },
+      { id: 'f2', type: 'check', label: 'ln prześwit', value: true }, { id: 'f3', type: 'check', label: 'ln grubość', value: false },
+      { id: 'n5', label: 'Liczba powtórzeń n punktu', min: 1, max: 20, step: 1, value: 5 },
+    ], () => this.render());
+    this.render();
+  },
+  render() {
+    const out = $('o5').value; const c = COL(); const key = OUTS[out].key;
+    const use = [0, 1, 2, 3].filter((j) => $('f' + j).checked);
+    if (!use.length) { $('t5').innerHTML = '<p class="nie">Zaznacz co najmniej jedną zmienną.</p>'; return; }
+    const ids = PTS.map((_, i) => i).filter((i) => isFinite(PTS[i][key])); const X = ids.map((i) => [1, ...use.map((j) => RAWIN[i][j])]); const y = ids.map((i) => PTS[i][key]);
+    const o = ols(X, y); const nm = ['wyraz wolny', ...use.map((j) => 'ln ' + NAZWY[j])];
+    const rows = nm.map((q, i) => { const sig = Math.abs(o.b[i]) > 2 * o.se[i]; return [q, fmt(o.b[i], 3), fmt(o.se[i], 3), `${fmt(o.b[i] - 2 * o.se[i], 3)} … ${fmt(o.b[i] + 2 * o.se[i], 3)}`, fmt(Math.abs(o.b[i]) / o.se[i], 1), sig ? '<span class="tak">tak</span>' : '<span class="nie">nie</span>']; });
+    $('t5').innerHTML = table(rows, ['Składnik', 'b', 'u(b)', 'b ± 2u (k = 2)', '|b|/u', 'istotny?']) + `<p class="note">n = ${o.n} unikalnych punktów, ${o.dof} stopni swobody. Punkty z powtórzeniami uśredniono, żeby nie liczyć ich jako niezależnych.</p>`;
+    const sg = o.sigma; const lo = Math.min(...o.fit.map(Math.exp), ...y.map(Math.exp)), hi = Math.max(...o.fit.map(Math.exp), ...y.map(Math.exp)); const un = OUTS[out].un;
+    draw('p5a', [
+      { type: 'scatter', mode: 'lines', x: [lo, hi], y: [lo * Math.exp(2 * sg), hi * Math.exp(2 * sg)], line: { color: c.mu, dash: 'dot' }, name: '+2σ' },
+      { type: 'scatter', mode: 'lines', x: [lo, hi], y: [lo * Math.exp(-2 * sg), hi * Math.exp(-2 * sg)], line: { color: c.mu, dash: 'dot' }, name: '−2σ' },
+      { type: 'scatter', mode: 'lines', x: [lo, hi], y: [lo, hi], line: { color: c.b }, name: 'idealnie' },
+      { type: 'scatter', mode: 'markers', x: o.fit.map(Math.exp), y: y.map(Math.exp), name: 'punkty', marker: { size: 5, color: c.a, opacity: 0.6 } },
+    ], { title: { text: `R² = ${fmt(o.r2, 3)}, R² skor. = ${fmt(o.r2adj, 3)}`, font: { size: 13 } }, xaxis: lax(Math.max(lo, 1e-3) * 0.8, hi * 1.3, `model [${un}]`), yaxis: lax(Math.max(lo, 1e-3) * 0.8, hi * 1.3, `symulacja [${un}]`), margin: { t: 44 } });
+    const fmin = Math.min(...o.fit), fmax = Math.max(...o.fit); const nb = 8, bins = Array.from({ length: nb }, () => []);
+    o.fit.forEach((f, i) => bins[Math.min(nb - 1, Math.floor(nb * (f - fmin) / (fmax - fmin + 1e-9)))].push([f, o.res[i]]));
+    const bm = bins.filter((b) => b.length).map((b) => [mean(b.map((q) => q[0])), mean(b.map((q) => q[1]))]);
+    draw('p5b', [
+      { type: 'scatter', mode: 'markers', x: o.fit, y: o.res, name: 'reszty', marker: { size: 5, color: c.a, opacity: 0.6 } },
+      { type: 'scatter', mode: 'lines+markers', x: bm.map((q) => q[0]), y: bm.map((q) => q[1]), name: 'średnia w przedziałach', line: { color: c.b, width: 2 } },
+      { type: 'scatter', mode: 'lines', x: [fmin, fmax], y: [2 * sg, 2 * sg], line: { color: c.mu, dash: 'dot' }, name: '±2σ' },
+      { type: 'scatter', mode: 'lines', x: [fmin, fmax], y: [-2 * sg, -2 * sg], line: { color: c.mu, dash: 'dot' }, showlegend: false },
+    ], { title: { text: `Reszty: σ = ${fmt(sg, 3)} (w ln), czyli ×/÷ ${fmt(Math.exp(2 * sg), 2)} dla ±2σ`, font: { size: 13 } }, xaxis: { title: { text: 'ln wartości z modelu [ln(' + un + ')]' } }, yaxis: { title: { text: 'reszta [ln]' } }, margin: { t: 44 } });
+    const curv = ols(o.fit.map((f) => [1, f, f * f]), o.res).r2; const A = typeA(out); const n = val('n5'); const uA = A.sp / Math.sqrt(n);
+    const ns = Array.from({ length: 20 }, (_, i) => i + 1);
+    const hasA = A.sp > 0;
+    draw('p5c', [
+      ...(hasA ? [{ type: 'scatter', mode: 'lines', x: ns, y: ns.map((q) => A.sp / Math.sqrt(q)), name: 'szum losowy u = s/√n (typ A)', line: { color: c.a } }] : []),
+      { type: 'scatter', mode: 'lines', x: [1, 20], y: [sg, sg], name: 'błąd modelu σ (reszty)', line: { color: c.bad, dash: 'dash' } },
+      ...(hasA ? [{ type: 'scatter', mode: 'markers', x: [n], y: [uA], name: 'wybrane n', marker: { size: 12, color: c.b } }] : []),
+    ], { title: { text: hasA ? 'Powtórzenia obniżają szum, ale nie błąd modelu' : 'Ten wynik jest deterministyczny: powtórzenia nic nie zmieniają (s = 0)', font: { size: 13 } }, xaxis: { title: { text: 'liczba powtórzeń n [–]' } }, yaxis: { type: hasA ? 'log' : 'linear', title: { text: 'niepewność [ln] ≈ błąd względny (skala log)' } }, margin: { t: 44 } });
+    const ns2 = nm.slice(1).map((q, i) => ({ q, ok: Math.abs(o.b[i + 1]) > 2 * o.se[i + 1] })); const nok = ns2.filter((r) => r.ok).map((r) => r.q), nno = ns2.filter((r) => !r.ok).map((r) => r.q);
+    $('w5').innerHTML = `<b class="t">Co z tego wynika dla otworków</b> (${OUTS[out].nm}): istotne trendy (zero poza ±2u): <b>${nok.join(', ') || 'brak'}</b>${nno.length ? '; nieistotne: ' + nno.join(', ') : ''}. Model tłumaczy R² = ${fmt(o.r2, 2)} wariancji, a pojedynczy wynik rozrzuca się o ×/÷ ${fmt(Math.exp(2 * sg), 2)} (±2σ). ${curv > 0.05 ? '<span class="nie">Reszty mają krzywiznę (R² = ' + fmt(curv, 2) + '), więc prosty log-log nie wystarcza i potrzebny jest model giętki (rozdz. 6).</span>' : 'W resztach nie widać wyraźnej krzywizny.'} Szum z prawdziwych powtórzeń (ten sam przypadek, inne ziarno): s = ${fmt(A.sp, 3)} w ln, ${A.dof} stopni swobody z ${A.gr.length} punktów (pominięto ${A.skip} powtarzane zestawy, w których zmieniały się ustawienia, a nie samo ziarno). Przy n = ${n} powtórzeniach u = <b>${fmt(uA, 3)}</b>. ${A.sp === 0 ? 'Ten wynik jest wyliczany geometrycznie, bez losowania, więc szum typu A wynosi zero.' : sg > 3 * A.sp ? 'Błąd modelu jest wielokrotnie większy od szumu: dokładanie powtórzeń nie pomoże, trzeba poprawić model (np. GP z rozdz. 6).' : 'Szum jest porównywalny z błędem modelu, więc powtórzenia mają sens.'} Trend jest miarodajny, gdy zero leży poza ±2u, reszty są bez struktury, a zakres danych obejmuje miejsce, w którym go używasz.`;
+  },
+};
+
+/* ---------- 6. Model GP ---------- */
+const SPLIT = {};
+function split(out) {
+  if (SPLIT[out]) return SPLIT[out]; const ds = dataset(out); const ord = shuffle([...Array(ds.ids.length).keys()], rngMake(7)); const nt = Math.round(0.7 * ord.length);
+  return (SPLIT[out] = { tr: ord.slice(0, nt).map((i) => ds.ids[i]), te: ord.slice(nt).map((i) => ds.ids[i]) });
+}
+CH.r6 = {
+  init() {
+    const m0 = getModel('tau45');
+    ctl('c6', [
+      { id: 'o6', type: 'select', label: 'Wynik', value: 'tau45', options: OUTSEL },
+      { id: 'ell6', label: 'Długość korelacji ℓ', min: 0.05, max: 1.5, step: 0.01, value: m0.ell, dec: 2, unit: '(skala 0–1)' },
+      { id: 'nf6', label: 'Szum (udział wariancji)', min: -4, max: -0.5, step: 0.05, value: Math.log10(m0.nf), show: (v) => fmt(100 * Math.pow(10, v), 1) + ' %' },
+      { id: 's6', label: 'Przekrój: smukłość t/Ø', min: 1, max: 12, step: 0.5, value: 4, dec: 1 },
+      { id: 'kk6', label: 'Przekrój: stożek', min: 1, max: 4, step: 0.1, value: 2, dec: 1 },
+      { id: 'au6', type: 'button', label: 'Dobierz ℓ i szum z LOO', cls: 'sec' },
+    ], (id) => { if (id === 'au6') { this.auto(); return; } if (id === 'o6') { this.auto(); return; } this.go(); });
+    this.render();
+  },
+  go: debounce(function () { CH.r6.render(); }, 80),
+  auto() {
+    const out = $('o6').value; $('w6').innerHTML = '<span class="spin">szukam najlepszych ℓ i szumu…</span>';
+    later(() => { const sp = split(out), ds = dataset(out, sp.tr); const h = tuneGP(ds.X, ds.y, ELLS.concat([1.2]), NFS); setVal('ell6', h.ell); setVal('nf6', Math.log10(h.nf)); this.render(); });
+  },
+  render() {
+    const out = $('o6').value, ell = val('ell6'), nf = Math.pow(10, val('nf6')), s0 = val('s6'), k0 = val('kk6'); const c = COL();
+    const sp = split(out), dtr = dataset(out, sp.tr), dte = dataset(out, sp.te); const g = gpFit(dtr.X, dtr.y, ell, nf); const lo = gpLOO(g);
+    let cov = 0, se = 0; for (let i = 0; i < dte.X.length; i++) { const [m, sd] = gpPred(g, dte.X[i], true); const e = dte.y[i] - m; const tot = Math.sqrt(sd * sd + nf * g.s2); if (Math.abs(e) <= 2 * tot) cov++; se += e * e; }
+    const cte = cov / dte.X.length, rm = Math.sqrt(se / dte.X.length);
+    const phis = Array.from({ length: 50 }, (_, i) => 0.3 * Math.pow(33 / 0.3, i / 49)); const mu = [], hi = [], lw = [];
+    for (const ph of phis) { const [m, sd] = gpPred(g, toU(s0, k0, ph, 0.5), true); mu.push(Math.exp(m)); hi.push(Math.exp(m + 2 * sd)); lw.push(Math.exp(m - 2 * sd)); }
+    const u0 = toU(s0, k0, 1, 0.5); const near = (id) => { const p = PTS[id], u = nrm(RAWIN[id]); return p.t === 0.5 && Math.abs(u[0] - u0[0]) < 0.12 && Math.abs(u[1] - u0[1]) < 0.12; };
+    const key = OUTS[out].key; const ptsTr = sp.tr.filter(near), ptsTe = sp.te.filter(near); const un = OUTS[out].un;
+    draw('p6', [
+      { type: 'scatter', mode: 'lines', x: phis, y: hi, line: { width: 0 }, showlegend: false, hoverinfo: 'skip' },
+      { type: 'scatter', mode: 'lines', x: phis, y: lw, line: { width: 0 }, fill: 'tonexty', fillcolor: 'rgba(37,99,235,.22)', name: 'pasmo ±2σ modelu' },
+      { type: 'scatter', mode: 'lines', x: phis, y: mu, line: { color: c.a, width: 2.5 }, name: 'GP (średnia)' },
+      { type: 'scatter', mode: 'markers', x: ptsTr.map((i) => PTS[i].phi), y: ptsTr.map((i) => Math.exp(PTS[i][key])), name: 'trening (blisko przekroju)', marker: { size: 9, color: c.b, line: { width: 1, color: c.fg } } },
+      { type: 'scatter', mode: 'markers', x: ptsTe.map((i) => PTS[i].phi), y: ptsTe.map((i) => Math.exp(PTS[i][key])), name: 'test (nie użyte do dopasowania)', marker: { size: 10, symbol: 'diamond-open', color: c.ok, line: { width: 2 } } },
+    ], { xaxis: lax(0.3, 33, 'prześwit φ [%] (skala log)'), yaxis: lax(Math.min(...lw) * 0.8, Math.max(...hi) * 1.2, `${OUTS[out].nm} [${un}]`), title: { text: `Przekrój przy t/Ø = ${fmt(s0, 1)}, stożek = ${fmt(k0, 1)}, t = 0,5 mm (punkty w pobliżu przekroju)`, font: { size: 12 } }, margin: { t: 44, b: 90 }, legend: { y: -0.3 } });
+    $('k6').innerHTML = [[`${dtr.X.length} / ${dte.X.length}`, 'punkty trening / test'], [fmt(lo.q2, 3), 'Q² (LOO)'], [pct(lo.cover, 0), 'pokrycie ±2σ w LOO'], [pct(cte, 0), 'pokrycie ±2σ na teście'], [`×/÷ ${fmt(Math.exp(rm), 2)}`, 'typowy błąd na teście (RMSE)']].map(([a, b]) => `<div><b>${a}</b>${b}</div>`).join('');
+    const verdict = cte < 0.88 ? '<span class="nie">model jest zbyt pewny siebie (pasmo za wąskie)</span>' : cte > 0.99 ? '<span class="nie">model jest zbyt ostrożny (pasmo za szerokie)</span>' : '<span class="tak">pasmo jest uczciwe</span>';
+    $('w6').innerHTML = `<b class="t">Co z tego wynika dla otworków</b> (${OUTS[out].nm}): przy ℓ = ${fmt(ell, 2)} i szumie ${fmt(100 * nf, 1)} % pokrycie na punktach testowych to <b>${pct(cte, 0)}</b>: ${verdict}. Typowa pomyłka modelu to ×/÷ ${fmt(Math.exp(rm), 2)}, więc wynik z modelu należy traktować jako przedział, nie liczbę. Spróbuj ℓ = 0,05 (krzywa łapie szum i Q² spada) i ℓ = 1,5 (krzywa się prostuje). Przycisk dobiera ℓ i szum automatycznie na podstawie LOO.`;
+  },
+};
+
+/* ---------- 7. Obszar pożądany ---------- */
+const G7 = 34;
+CH.r7 = {
+  init() {
+    ctl('c7', [
+      { id: 'kk7', label: 'Stożek', min: 1, max: 4, step: 0.1, value: 2, dec: 1 },
+      { id: 't7', type: 'select', label: 'Grubość blachy', value: '0.5', options: [['0.4', '0,4 mm'], ['0.5', '0,5 mm']] },
+      { id: 'D7', label: 'Limit D_niewid', min: 0.5, max: 1.5, step: 0.05, value: 1, dec: 2, unit: 'm' },
+      { id: 'z7', label: 'Min. sztywność', min: 40, max: 90, step: 1, value: 60, unit: '% litej' },
+      { id: 'cons7', type: 'check', label: 'wariant konserwatywny: D z górnym pasmem μ + 2σ', value: false },
+      { id: 'tau7', type: 'check', label: 'wymagaj τ0 ≥ 2 %', value: false },
+    ], () => this.go());
+    this.render();
+  },
+  go: debounce(function () { CH.r7.render(); }, 100),
+  render() {
+    $('w7').innerHTML = '<span class="spin">liczę mapę…</span>';
+    later(() => {
+      const k = val('kk7'), t = +$('t7').value, Dl = val('D7'), zl = val('z7'), cons = $('cons7').checked, t0 = $('tau7').checked; const c = COL();
+      const mD = getModel('D'), mS = getModel('sz'), m45 = getModel('tau45');
+      const xs = Array.from({ length: G7 }, (_, i) => 1 + 11 * i / (G7 - 1)), ys = Array.from({ length: G7 }, (_, j) => 0.5 * Math.pow(60, j / (G7 - 1)));
+      const zT = [], zBad = [], zNo = [], zD = [], zS = []; let best = null, nf = 0, nt = 0;
+      const dataU = PTS.filter((p) => p.t === t).map((p) => nrm(RAWIN[PTS.indexOf(p)]));
+      for (let j = 0; j < G7; j++) { const rT = [], rB = [], rN = [], rD = [], rS = []; for (let i = 0; i < G7; i++) {
+        const s = xs[i], ph = ys[j], u = toU(s, k, ph, t); let nn = 9; for (const q of dataU) { const dd = d2(u, q); if (dd < nn) nn = dd; }
+        const far = Math.sqrt(nn) > 0.3; const [lD, sD] = gpPred(mD.g, u, cons); const lS = gpPred(mS.g, u, false)[0]; const l45 = gpPred(m45.g, u, false)[0];
+        const dm = 1000 * t / s, pm = dm * Math.sqrt(100 * HEX / ph), bridge = pm - k * dm; const Dv = Math.exp(lD + (cons ? 2 * sD : 0)), Sz = Math.exp(lS);
+        const ok = Dv <= Dl && Sz >= zl && dm >= 25 && bridge >= 30 && (!t0 || 0.987 * ph >= 2);
+        rD.push(Math.exp(lD)); rS.push(Sz);
+        if (far) { rT.push(null); rB.push(null); rN.push(1); } else { nt++; rN.push(null); if (ok) { nf++; rT.push(Math.exp(l45)); rB.push(null); if (!best || l45 > best.l45) best = { l45, s, ph, u, dm, pm, bridge, Dv, Sz }; } else { rT.push(null); rB.push(1); } }
+      }
+        zT.push(rT); zBad.push(rB); zNo.push(rN); zD.push(rD); zS.push(rS); }
+      const tr = [
+        { type: 'heatmap', x: xs, y: ys, z: zNo, colorscale: [[0, 'rgba(128,128,128,.25)'], [1, 'rgba(128,128,128,.25)']], showscale: false, hoverinfo: 'skip', name: 'brak danych' },
+        { type: 'heatmap', x: xs, y: ys, z: zBad, colorscale: [[0, 'rgba(220,38,38,.28)'], [1, 'rgba(220,38,38,.28)']], showscale: false, hoverinfo: 'skip', name: 'łamie ograniczenia' },
+        { type: 'heatmap', x: xs, y: ys, z: zT, colorscale: 'Viridis', colorbar: MOB() ? { orientation: 'h', title: { text: 'τ45 [%]', side: 'top' }, thickness: 10, len: 0.9, y: -0.3, yanchor: 'top' } : { title: { text: 'τ45 [%]', side: 'right' }, thickness: 12, len: 0.9 }, hovertemplate: 'smukłość %{x:.1f}<br>φ %{y:.1f} %<br>τ45 %{z:.2f} %<extra></extra>', name: 'τ45' },
+        { type: 'contour', x: xs, y: ys, z: zD, contours: { start: Dl, end: Dl, size: 1, coloring: 'none' }, line: { color: c.bad, width: 2, dash: 'dash' }, showscale: false, hoverinfo: 'skip', name: 'D = limit' },
+        { type: 'contour', x: xs, y: ys, z: zS, contours: { start: zl, end: zl, size: 1, coloring: 'none' }, line: { color: c.b, width: 2, dash: 'dot' }, showscale: false, hoverinfo: 'skip', name: 'sztywność = min' },
+        { type: 'scatter', mode: 'markers', x: PTS.filter((p) => p.t === t).map((p) => p.s), y: PTS.filter((p) => p.t === t).map((p) => p.phi), name: 'dane (ta grubość)', marker: { size: 3, color: c.fg, opacity: 0.5 } },
+      ];
+      if (best) tr.push({ type: 'scatter', mode: 'markers', x: [best.s], y: [best.ph], name: 'optimum τ45', marker: { size: 16, symbol: 'star', color: c.b, line: { width: 1.5, color: c.fg } } });
+      draw('p7', tr, { xaxis: { title: { text: 'smukłość t/Ø [–]' }, range: [1, 12] }, yaxis: lax(0.5, 30, 'prześwit φ [%] (skala log)'), margin: MOB() ? { b: 190, l: 48, r: 8 } : { b: 100 }, legend: { y: MOB() ? -0.62 : -0.3 } });
+      if (best) { const [m, sd] = gpPred(m45.g, best.u, true); $('k7').innerHTML = [[`${fmt(best.s, 1)}`, 'smukłość t/Ø'], [fmt(best.dm, 0) + ' µm', 'Ø wylotu'], [fmt(best.pm, 0) + ' µm', 'rozstaw'], [fmt(best.ph, 1) + ' %', 'prześwit φ'], [`${fmt(Math.exp(m), 2)} % (${fmt(Math.exp(m - 2 * sd), 2)}–${fmt(Math.exp(m + 2 * sd), 2)})`, 'τ45, przedział ±2σ'], [fmt(best.Dv, 2) + ' m', cons ? 'D (górne pasmo)' : 'D_niewid'], [fmt(best.Sz, 0) + ' %', 'sztywność']].map(([a, b]) => `<div><b>${a}</b>${b}</div>`).join(''); }
+      else $('k7').innerHTML = '';
+      $('w7').innerHTML = best ? `<b class="t">Co z tego wynika dla otworków:</b> przy stożku ${fmt(k, 1)} i grubości ${fmt(t, 1)} mm obszar pożądany to ${pct(nf / nt, 0)} komórek mapy objętych danymi. Optimum τ45 leży przy Ø ≈ <b>${fmt(best.dm, 0)} µm</b>, rozstawie <b>${fmt(best.pm, 0)} µm</b> (φ ${fmt(best.ph, 1)} %), z D = ${fmt(best.Dv, 2)} m i sztywnością ${fmt(best.Sz, 0)} %. ${best.Dv > 0.93 * Dl ? '<span class="nie">Leży tuż przy granicy D, więc włącz wariant konserwatywny albo dołóż renderów w tym miejscu.</span>' : 'Ma zapas względem granicy D.'} ${best.Sz < zl + 3 ? '<span class="nie">Sztywność jest tuż nad minimum (' + fmt(best.Sz, 0) + ' % przy wymaganych ' + fmt(zl, 0) + ' %), czyli optimum opiera się o dwie granice naraz.</span>' : ''} Szare pole to brak danych (nie wolno ufać modelowi), czerwone to złamane ograniczenia. Zmieniaj stożek: optimum przesuwa się, bo zmieniają się obie granice.` : '<b class="t">Co z tego wynika dla otworków:</b> przy tych ograniczeniach nie ma żadnego punktu w obszarze pokrytym danymi. Poluzuj limit D lub minimalną sztywność, albo dołóż dane w innym zakresie.';
+    });
+  },
+};
+
+/* ---------- 8. Adaptacyjnie ---------- */
+const G8 = 28, K8 = 2, T8 = 0.5;
+CH.r8 = {
+  S: null,
+  prep() {
+    if (this.truth) return; const mD = getModel('D'), m45 = getModel('tau45'), mS = getModel('sz'); const cells = [];
+    for (let j = 0; j < G8; j++) for (let i = 0; i < G8; i++) {
+      const ux = i / (G8 - 1), uy = j / (G8 - 1), s = 1.5 * Math.pow(8, ux), ph = Math.pow(30, uy), u = toU(s, K8, ph, T8);
+      const dm = 1000 * T8 / s, pm = dm * Math.sqrt(100 * HEX / ph), sz = Math.exp(gpPred(mS.g, u, false)[0]);
+      cells.push({ i, j, ux, uy, s, ph, lD: gpPred(mD.g, u, false)[0], l45: gpPred(m45.g, u, false)[0], sz, cheap: sz >= 60 && dm >= 25 && pm - K8 * dm >= 30 });
+    }
+    this.truth = cells; this.cand = cells.filter((q) => q.cheap);
+    this.tFeas = cells.map((q) => q.cheap && q.lD <= 0); const feas = this.cand.filter((q) => q.lD <= 0);
+    this.best = feas.reduce((a, q) => (q.l45 > a.l45 ? q : a), feas[0]);
+  },
+  init() {
+    ctl('c8', [
+      { id: 'st8', type: 'select', label: 'Strategia partii', value: 'mix', options: [['mix', 'mieszana: niepewność + granica + EI'], ['U', 'tylko największa niepewność'], ['G', 'tylko granica D = 1 m'], ['E', 'tylko oczekiwana poprawa τ45']] },
+      { id: 'b8', label: 'Rozmiar partii', min: 3, max: 15, step: 1, value: 5 },
+      { id: 'th8', label: 'Cel: błąd klasyfikacji ≤', min: 1, max: 15, step: 1, value: 4, unit: '%' },
+      { id: 'ns8', label: 'Szum symulatora', min: 2, max: 30, step: 1, value: 12, unit: '%' },
+      { id: 'sd8', label: 'Ziarno', min: 1, max: 20, step: 1, value: 3 },
+      { id: 'nx8', type: 'button', label: '+ Następna runda' },
+      { id: 'all8', type: 'button', label: '⏩ Do 8 rund', cls: 'sec' },
+      { id: 'rs8', type: 'button', label: 'Od nowa', cls: 'sec' },
+    ], (id) => { if (id === 'nx8') this.round(); else if (id === 'all8') this.runAll(); else this.reset(); });
+    $('w8').innerHTML = '<span class="spin">przygotowuję „prawdziwy” model z danych…</span>';
+    later(() => { this.prep(); this.reset(); });
+  },
+  render() { if (this.S) this.draw(); },
+  reset() {
+    if (!this.truth) return; const seed = val('sd8'); this.rng = rngMake(1000 + seed); this.S = { chosen: [], obs: new Map(), hist: [] }; this.running = false;
+    const n0 = 8; const lhs = designLHS(n0, this.rng); const used = new Set();
+    for (const q of lhs) { let bi = -1, bd = 9; this.cand.forEach((c, ci) => { if (used.has(ci)) return; const dd = d2([c.ux, c.uy], q); if (dd < bd) { bd = dd; bi = ci; } }); used.add(bi); this.addObs(bi); }
+    this.record(); this.draw();
+  },
+  addObs(ci) { const c = this.cand[ci]; this.S.chosen.push(ci); const ns = val('ns8') / 100; this.S.obs.set(ci, { lD: c.lD + ns * gauss(this.rng), l45: c.l45 + ns * gauss(this.rng) }); },
+  fit(chosen, obs) {
+    const X = chosen.map((ci) => [this.cand[ci].ux, this.cand[ci].uy]); const yD = chosen.map((ci) => obs.get(ci).lD), y45 = chosen.map((ci) => obs.get(ci).l45); const ells = [0.2, 0.35, 0.6], nfs = [0.005, 0.03];
+    const hD = tuneGP(X, yD, ells, nfs), h45 = tuneGP(X, y45, ells, nfs);
+    return { gD: gpFit(X, yD, hD.ell, hD.nf), g45: gpFit(X, y45, h45.ell, h45.nf) };
+  },
+  evalModel(m) {
+    const pr = this.cand.map((c) => { const x = [c.ux, c.uy]; const [a, sa] = gpPred(m.gD, x, true), [b, sb] = gpPred(m.g45, x, true); return { a, sa, b, sb }; });
+    let bad = 0; this.cand.forEach((c, ci) => { if ((pr[ci].a <= 0) !== (c.lD <= 0)) bad++; });
+    let rec = -1; pr.forEach((p, ci) => { if (p.a <= 0 && (rec < 0 || p.b > pr[rec].b)) rec = ci; });
+    return { pr, err: bad / this.cand.length, rec };
+  },
+  record() {
+    const S = this.S, m = this.fit(S.chosen, S.obs); const ev = this.evalModel(m); const N = S.chosen.length; let lh = 0; const R = 4;
+    for (let r = 0; r < R; r++) {
+      const rg = rngMake(77 * N + 13 * r + val('sd8')); const des = designLHS(N, rg), used = new Set(), ch = [], ob = new Map();
+      for (const q of des) { let bi = -1, bd = 9; this.cand.forEach((c, ci) => { if (used.has(ci)) return; const dd = d2([c.ux, c.uy], q); if (dd < bd) { bd = dd; bi = ci; } }); used.add(bi); ch.push(bi); const c = this.cand[bi]; ob.set(bi, { lD: c.lD + val('ns8') / 100 * gauss(rg), l45: c.l45 + val('ns8') / 100 * gauss(rg) }); }
+      lh += this.evalModel(this.fit(ch, ob)).err;
+    }
+    const rec = ev.rec >= 0 ? this.cand[ev.rec] : null; const short = rec ? (rec.lD <= 0 ? 1 - Math.exp(rec.l45 - this.best.l45) : null) : null;
+    S.last = { m, ev }; S.hist.push({ N, err: ev.err, lhs: lh / R, short, violates: rec ? rec.lD > 0 : false });
+  },
+  pick(m, ev, b) {
+    const S = this.S, st = $('st8').value, pr = ev.pr; const free = this.cand.map((_, ci) => ci).filter((ci) => !S.obs.has(ci));
+    let fb = -1e9; S.chosen.forEach((ci) => { const o = S.obs.get(ci); if (o.lD <= 0 && o.l45 > fb) fb = o.l45; });
+    const sc = { U: {}, G: {}, E: {} };
+    for (const ci of free) { const p = pr[ci]; sc.U[ci] = p.sa + p.sb; sc.G[ci] = Math.exp(-0.5 * Math.pow(p.a / p.sa, 2)); const z = (p.b - fb) / p.sb; sc.E[ci] = ((p.b - fb) * normCdf(z) + p.sb * normPdf(z)) * normCdf(-p.a / p.sa); }
+    for (const k of ['U', 'G', 'E']) { const mx = Math.max(...free.map((ci) => sc[k][ci])) || 1; for (const ci of free) sc[k][ci] /= mx; }
+    const parts = st === 'mix' ? [['U', Math.ceil(b / 3)], ['G', Math.ceil(b / 3)], ['E', b - 2 * Math.ceil(b / 3)]] : [[st, b]]; const picked = [];
+    for (const [k, nb] of parts) for (let q = 0; q < nb; q++) {
+      let bi = -1, bv = -1; for (const ci of free) { if (picked.includes(ci)) continue; let dm = 9; const c = this.cand[ci]; for (const cj of S.chosen.concat(picked)) dm = Math.min(dm, Math.sqrt(d2([c.ux, c.uy], [this.cand[cj].ux, this.cand[cj].uy]))); const v = sc[k][ci] * Math.min(1, dm / 0.12); if (v > bv) { bv = v; bi = ci; } }
+      if (bi >= 0) picked.push(bi);
+    }
+    return picked;
+  },
+  round() {
+    if (!this.S || !this.S.last) return; const b = val('b8'); const pk = this.pick(this.S.last.m, this.S.last.ev, b); pk.forEach((ci) => this.addObs(ci)); this.record(); this.draw();
+  },
+  runAll() {
+    if (this.running) return; this.running = true; const step = () => { if (!this.running || this.S.hist.length >= 9) { this.running = false; return; } this.round(); setTimeout(step, 60); }; step();
+  },
+  draw() {
+    const S = this.S, c = COL(), h = S.hist, thr = val('th8') / 100; const last = S.last, N = S.chosen.length;
+    const tf = this.cand.map((q) => (q.lD <= 0 ? 1 : 0));
+    const xs = Array.from({ length: G8 }, (_, i) => 1.5 * Math.pow(8, i / (G8 - 1))), ys = Array.from({ length: G8 }, (_, j) => Math.pow(30, j / (G8 - 1)));
+    const zT = Array.from({ length: G8 }, () => new Array(G8).fill(null)), zM = Array.from({ length: G8 }, () => new Array(G8).fill(null));
+    this.cand.forEach((q, ci) => { zT[q.j][q.i] = tf[ci]; zM[q.j][q.i] = last.ev.pr[ci].a <= 0 ? 1 : 0; });
+    const rec = last.ev.rec >= 0 ? this.cand[last.ev.rec] : null;
+    const rounds = S.chosen.map((ci, idx) => h.findIndex((q) => q.N > idx));
+    draw('p8a', [
+      { type: 'heatmap', x: xs, y: ys, z: zT, colorscale: [[0, 'rgba(220,38,38,.18)'], [1, 'rgba(5,150,105,.30)']], showscale: false, hoverinfo: 'skip', name: 'prawda' },
+      { type: 'contour', x: xs, y: ys, z: zM, contours: { start: 0.5, end: 0.5, size: 1, coloring: 'none' }, line: { color: c.b, width: 2.5 }, showscale: false, hoverinfo: 'skip', name: 'granica wg modelu' },
+      { type: 'scatter', mode: 'markers', x: S.chosen.map((ci) => this.cand[ci].s), y: S.chosen.map((ci) => this.cand[ci].ph), name: 'wykonane rendery (kolor = runda)', marker: { size: 8, color: rounds, colorscale: 'Viridis', line: { width: 1, color: c.fg } } },
+      ...(rec ? [{ type: 'scatter', mode: 'markers', x: [rec.s], y: [rec.ph], name: 'rekomendowany punkt', marker: { size: 15, symbol: 'star', color: c.b, line: { width: 1.5, color: c.fg } } }] : []),
+    ], { title: { text: 'Zielone: D ≤ 1 m naprawdę; linia: wg modelu', font: { size: 12 } }, xaxis: lax(1.5, 12, 'smukłość t/Ø [–] (skala log)'), yaxis: lax(1, 12, 'prześwit φ [%] (skala log)'), margin: { t: 44, b: 100 }, legend: { y: -0.35 } });
+    draw('p8b', [
+      { type: 'scatter', mode: 'lines+markers', x: h.map((q) => q.N), y: h.map((q) => 100 * q.err), name: 'adaptacyjnie', line: { color: c.a, width: 3 } },
+      { type: 'scatter', mode: 'lines+markers', x: h.map((q) => q.N), y: h.map((q) => 100 * q.lhs), name: 'sam LHS, tyle samo punktów (śr. 4)', line: { color: c.mu, dash: 'dash' } },
+      { type: 'scatter', mode: 'lines', x: [h[0].N, Math.max(h[h.length - 1].N, h[0].N + 1)], y: [100 * thr, 100 * thr], name: 'cel', line: { color: c.ok, dash: 'dot' } },
+    ], { title: { text: 'Błąd klasyfikacji granicy D = 1 m', font: { size: 12 } }, xaxis: { title: { text: 'wykonane rendery N [–]' } }, yaxis: { title: { text: 'komórki sklasyfikowane źle [%]' }, rangemode: 'tozero' }, margin: { t: 44, b: 100 }, legend: { y: -0.35 } });
+    const stab = (k) => { for (let i = 0; i < h.length; i++) if (h.slice(i).every((q) => q[k] <= thr)) return h[i].N; return undefined; }; const na = stab('err'), nl = stab('lhs'); const tot = this.cand.length; const lastH = h[h.length - 1];
+    $('k8').innerHTML = [[`${N} z ${tot}`, 'renderów wykonanych / punktów mapy'], [pct(lastH.err, 1), 'błąd granicy (adaptacyjnie)'], [pct(lastH.lhs, 1), 'błąd granicy (sam LHS)'], [na ? `${na}` : '–', 'N, od którego trwale ≤ cel (adapt.)'], [nl ? `${nl}` : '–', 'to samo dla samego LHS']].map(([a, b]) => `<div><b>${a}</b>${b}</div>`).join('');
+    const sv = na && nl ? nl - na : null;
+    $('w8').innerHTML = `<b class="t">Co z tego wynika dla otworków:</b> po ${h.length - 1} rundach (${N} renderów, ${pct(N / tot, 0)} punktów mapy; siatka potrzebowałaby ${tot}) granica D = 1 m jest błędnie sklasyfikowana w ${pct(lastH.err, 1)} komórek. ${na ? `Cel ${pct(thr, 0)} osiągnięto trwale (do końca przebiegu) przy ${na} renderach` + (nl ? `, a sam LHS dopiero przy ${nl}${sv > 0 ? `, czyli <b>oszczędność ${sv} renderów</b> (${pct(sv / nl, 0)})` : sv < 0 ? ' (tym razem LHS był lepszy: to jedno losowanie)' : ''}.` : ', a sam LHS go jeszcze nie osiągnął.') : 'Celu jeszcze nie osiągnięto: dodaj rundy.'} ${lastH.short !== null && lastH.short !== undefined ? `Rekomendowany punkt jest naprawdę dopuszczalny i oddaje ${pct(1 - lastH.short, 0)} najlepszego możliwego τ45.` : lastH.violates ? '<span class="nie">Rekomendowany punkt w rzeczywistości łamie D ≤ 1 m.</span>' : ''} <span class="note">To jedna symulacja na modelu zbudowanym z danych (szum symulatora ${val('ns8')} % w ln), przy stożku 2 i grubości 0,5 mm; zmień ziarno i strategię, żeby zobaczyć rozrzut. Pojedynczy przebieg jest losowy. W sprawdzeniu autora (średnia z 8 ziaren, ustawienia domyślne) strategie „mieszana” i „granica” schodziły poniżej 4 % po ok. 25 renderach, a sam LHS dopiero przy ok. 43. Strategia „oczekiwana poprawa” szuka optimum, a nie granicy, więc granicy nie poprawia.</span>`;
+  },
+};
+
+/* ---------- start ---------- */
+(function start() {
+  const rep = PTS.filter((p) => p.n > 1).length;
+  $('daneInfo').textContent = `Dane: ${RAW.n} symulacji (stal 304, układ heksagonalny, elektropolerowana, bez utlenienia i beczki, grubość 0,4–0,5 mm) = ${PTS.length} różnych zestawów parametrów, z czego ${rep} powtarzano z innym ziarnem szumu.`;
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { const id = e.target.id; if (CH[id] && !CH[id].done) { CH[id].done = true; CH[id].init(); } io.unobserve(e.target); } }), { rootMargin: '400px' });
+  Object.keys(CH).forEach((id) => io.observe($(id)));
+  const redraw = () => Object.values(CH).forEach((c) => { if (c.done && c.render) c.render(); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTimeout(redraw, 50));
+  window.__CH = CH;
+})();
+
+</script>
+</body>
+</html>

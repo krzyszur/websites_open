@@ -134,6 +134,45 @@ body[data-lang="en"] [lang="pl"]{display:none}
 
     <a class="open" href="mikroperforacja-laser/"><span lang="pl">Otwórz kalkulator</span><span lang="en">Open calculator</span></a>
   </article>
+  <article class="card" id="nauka-doe-mikrootwory">
+    <h2 lang="pl">Planowanie eksperymentów (DoE) na przykładzie mikrootworów</h2>
+    <h2 lang="en">Design of experiments (DoE) taught on a micro-hole example</h2>
+    <div class="meta" lang="pl">Listopad 2026 · jeden plik HTML · wykresy z CDN (wymaga internetu) · strona po polsku</div>
+    <div class="meta" lang="en">November 2026 · single HTML file · charts from a CDN (needs internet) · page in Polish</div>
+
+    <p lang="pl">Interaktywny kurs planowania doświadczeń i analizy wrażliwości dla inżyniera, który zna fizykę i Pythona, ale nie statystykę. Na jednym przykładzie (blacha 304 z mikrootworami, przez które ma przechodzić światło, a z 1 m otworów nie ma być widać) przechodzi <b>8 rozdziałów</b>: zmienne i ograniczenia, grupy bezwymiarowe, plany punktów (siatka, LHS, Halton, maximin), przesiewanie Morrisa i Sobola, regresja z niepewnościami, model zastępczy GP, mapa obszaru pożądanego i próbkowanie adaptacyjne. Do tego ściąga w 10 krokach i słowniczek. Wszystkie wykresy liczą się w przeglądarce na prawdziwych wynikach 318 symulacji.</p>
+    <p lang="en">An interactive course on design of experiments and sensitivity analysis for an engineer who knows physics and Python but not statistics. Using one example (a 304 steel sheet with micro-holes that must pass light while the holes stay invisible from 1 m) it walks through <b>8 chapters</b>: variables and constraints, dimensionless groups, point designs (grid, LHS, Halton, maximin), Morris and Sobol screening, regression with uncertainties, a Gaussian-process surrogate, the feasible-region map and adaptive sampling. It ends with a 10-step cheat sheet and a glossary. All charts are computed in the browser from real results of 318 simulations.</p>
+
+    <div class="tags"><span>DoE</span><span>Morris / Sobol</span><span>Gaussian process</span><span>Plotly</span></div>
+
+    <h3 lang="pl">Jak powstała</h3>
+    <h3 lang="en">How it was made</h3>
+    <ul lang="pl">
+      <li>Dane: wyniki symulacji makro projektu lamp (stal 304, układ heksagonalny, grubość 0,4–0,5 mm), wbudowane w plik.</li>
+      <li>Regresja, proces gaussowski, metoda Morrisa i indeksy Sobola są napisane w JavaScripcie i liczone w przeglądarce; Sobol i Morris działają na modelu zastępczym, nie na symulatorze.</li>
+      <li>Rozdział 8 to symulacja próbkowania adaptacyjnego na modelu zbudowanym z danych; porównanie z samym LHS sprawdziłem na średniej z 8 ziaren.</li>
+      <li>Testy: Playwright + Chromium, widok telefonu i tryb ciemny, kontrola błędów konsoli.</li>
+    </ul>
+    <ul lang="en">
+      <li>Data: results of the project’s macro simulations (304 steel, hexagonal layout, 0.4–0.5 mm thick), embedded in the file.</li>
+      <li>Regression, the Gaussian process, Morris screening and Sobol indices are written in JavaScript and computed in the browser; Morris and Sobol run on the surrogate, not on the simulator.</li>
+      <li>Chapter 8 simulates adaptive sampling on a model built from the data; the comparison with plain LHS was checked on an average of 8 seeds.</li>
+      <li>Testing: Playwright + Chromium, phone width and dark mode, console-error checks.</li>
+    </ul>
+
+    <h3 lang="pl">Użyte narzędzia</h3>
+    <h3 lang="en">Tools used</h3>
+    <ul>
+      <li><b>Claude</b> (Anthropic, Claude Sonnet 5.5) in <b>Claude Code</b> – <span lang="pl">projekt, kod, analiza danych, testy</span><span lang="en">design, code, data analysis, testing</span></li>
+      <li><b>Plotly 2.35.3</b> (cdnjs) + <b>JavaScript</b> – <span lang="pl">wykresy i obliczenia</span><span lang="en">charts and computation</span></li>
+      <li><b>Python</b> – <span lang="pl">składanie pliku z danych CSV</span><span lang="en">assembling the file from the CSV data</span>; <b>Playwright</b> + headless <b>Chromium</b> – <span lang="pl">testy</span><span lang="en">testing</span></li>
+    </ul>
+
+    <p class="note" lang="pl">Uwaga: czas renderu w rozdz. 1 to założenie suwaka, a wnioski dotyczą tego zbioru danych (jeden materiał i układ). To materiał do nauki, nie procedura projektowa.</p>
+    <p class="note" lang="en">Note: render time in chapter 1 is a slider assumption, and the conclusions apply to this data set (one material and layout). It is learning material, not a design procedure.</p>
+
+    <a class="open" href="nauka-doe-mikrootwory/"><span lang="pl">Otwórz kurs</span><span lang="en">Open the course</span></a>
+  </article>
 </main>
 
 <footer>
