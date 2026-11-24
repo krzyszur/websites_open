@@ -53,6 +53,12 @@ dl dt{font-weight:700;margin-top:8px}dl dd{margin:0 0 4px 0;color:var(--muted)}
 code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:.9em}
 footer{max-width:920px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font-size:.85rem}
 .spin{color:var(--muted);font-style:italic}
+details.algo{border:1px solid var(--bd);border-radius:10px;padding:8px 14px;margin:10px 0;background:var(--soft)}
+details.algo summary{font-weight:600;color:var(--acc)}
+details.algo ol,details.algo ul{margin:6px 0 6px 0;padding-left:22px}
+details.algo li{margin:4px 0}
+.formula{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;margin:6px 0;overflow-x:auto;white-space:pre}
+h2 .nr.sm{font-size:.85rem}
 </style>
 </head>
 <body>
@@ -62,7 +68,7 @@ footer{max-width:920px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 <p class="note" id="daneInfo"></p>
 </header>
 <nav>
-<a href="#r1">1 Problem</a><a href="#r2">2 Bezwymiarowe</a><a href="#r3">3 Plan punktów</a><a href="#r4">4 Przesiewanie</a><a href="#r5">5 Dopasowanie</a><a href="#r6">6 Model GP</a><a href="#r7">7 Obszar pożądany</a><a href="#r8">8 Adaptacyjnie</a><a href="#sciaga">Ściąga</a><a href="#slownik">Słowniczek</a>
+<a href="#r1">1 Problem</a><a href="#r2">2 Bezwymiarowe</a><a href="#r3">3 Plan punktów</a><a href="#r4">4 Przesiewanie</a><a href="#r5">5 Dopasowanie</a><a href="#r6">6 Model GP</a><a href="#r7">7 Obszar pożądany</a><a href="#r8">8 Adaptacyjnie</a><a href="#r9">9 Plan prac</a><a href="#r10">10 Prototypy i lab</a><a href="#sciaga">Ściąga</a><a href="#slownik">Słowniczek</a>
 </nav>
 <main>
 
@@ -88,6 +94,12 @@ footer{max-width:920px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 <section id="r2">
 <h2><span class="nr">2</span>Zmienne bezwymiarowe zamiast Ø i rozstawu</h2>
 <p class="intuicja">Światło „widzi” proporcje, nie mikrometry. Prześwit φ to udział powierzchni zajęty przez otwory, smukłość to grubość podzielona przez Ø (jak głęboka jest „rurka”), stożek to stosunek Ø wlotu do Ø wylotu. Dwa otwory w innej skali, ale z tymi samymi proporcjami, przepuszczają na wprost tyle samo światła. Jedna zmienna zastępuje wtedy dwie (Ø i rozstaw), więc przestrzeń do przeszukania jest mniejsza. Uwaga: to działa tylko dla wielkości, które naprawdę są bezwymiarowe. Wykres poniżej pokazuje, dla których tak jest.</p>
+<details class="algo" open><summary>Jak to działa: skąd się biorą grupy bezwymiarowe</summary>
+<ol><li>Wypisz zmienne wymiarowe (Ø, rozstaw, grubość) i wynik, który chcesz opisać.</li>
+<li>Podziel je tak, żeby jednostki się skróciły: Ø/rozstaw (daje prześwit φ ≈ 0,9069·(Ø/rozstaw)² dla układu heksagonalnego), grubość/Ø (smukłość), Ø wlotu/Ø wylotu (stożek).</li>
+<li>Zamiast 3–4 zmiennych wymiarowych masz 3 grupy. Reguła ogólna (twierdzenie Buckinghama π): liczba grup = liczba zmiennych minus liczba niezależnych jednostek.</li>
+<li>Sprawdź na danych, czy wynik rzeczywiście zależy od grup: jeśli R² dla φ jest bliskie 1, a dla Ø bliskie 0, zmienna wymiarowa była zbędna.</li></ol>
+<p class="note">Fizyka podpowiada grupy, statystyka je tylko potwierdza. Gdy skala ma znaczenie (jak dla widoczności oczu), zostaw zmienną wymiarową.</p></details>
 <div class="ctl" id="c2"></div>
 <div class="grid2"><div class="plot" id="p2a"></div><div class="plot" id="p2b"></div></div>
 <div class="wynik" id="w2"></div>
@@ -98,6 +110,17 @@ footer{max-width:920px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 <section id="r3">
 <h2><span class="nr">3</span>Jeden parametr naraz kontra plan przestrzenny</h2>
 <p class="intuicja">Zmienianie jednego parametru naraz (OFAT) daje krzyż punktów i nie widzi interakcji, np. że stożek działa inaczej przy małej, a inaczej przy dużej smukłości. Siatka pokrywa pole, ale tylko przy gotowej liczbie punktów (m²) i powtarza te same wartości na osiach. Losowe punkty zostawiają dziury. Łaciński hipersześcian (LHS), ciąg Haltona i maximin rozsuwają punkty tak, żeby żadna wartość się nie powtarzała i żeby największa pusta przestrzeń była mała. Tę „największą lukę” da się policzyć i porównać, to robi wykres.</p>
+<details class="algo" open><summary>Jak to działa: siatka, losowe, LHS, Halton, maximin</summary>
+<ul>
+<li><b>Siatka:</b> każdą oś dzielisz na m poziomów i bierzesz wszystkie kombinacje, razem m<sup>d</sup> punktów. Prosta, ale w 4 wymiarach przy m = 5 to już 625.</li>
+<li><b>Losowe:</b> każdą współrzędną losuje generator. Punkty tworzą skupiska i dziury, bo nic ich nie rozsuwa.</li>
+<li><b>LHS (łaciński hipersześcian):</b> dla N punktów dzielisz każdą oś na N równych przedziałów. (1) Dla każdej zmiennej wylosuj permutację liczb 1…N. (2) Punkt <i>i</i> dostaje w zmiennej <i>j</i> przedział o numerze π<sub>j</sub>(i). (3) Wewnątrz przedziału wylosuj położenie. Efekt: na każdej osi każdy przedział ma dokładnie jeden punkt, więc nie ma powtórzeń wartości. W parach zmiennych mogą zostać dziury, dlatego często losuje się kilka permutacji i bierze tę z najlepszym kryterium (np. maximin).</li>
+<li><b>Halton (ciąg niskiej rozbieżności):</b> punkt <i>i</i> w bazie <i>b</i>: zapisz <i>i</i> w systemie o podstawie <i>b</i>, odwróć cyfry i postaw przecinek po lewej. Np. i = 6 = 110 w bazie 2, odwrócone 011, czyli 0,011<sub>2</sub> = 0,375. Każda oś używa innej liczby pierwszej jako bazy (2, 3, 5, 7…). Zaleta: kolejne punkty uzupełniają luki po poprzednich, więc plan można rozbudowywać bez wyrzucania wykonanych przypadków.</li>
+<li><b>Maximin zachłanny:</b> start od punktu środkowego. W każdym kroku losujesz wielu kandydatów (tu 400) i wybierasz tego, którego odległość do najbliższego już wybranego punktu jest największa. Powtarzasz do N punktów. Wynik: punkty równomiernie rozsunięte, plan też rozbudowywalny.</li>
+<li><b>Największa luka (promień pokrycia):</b> dla wielu punktów próbnych sprawdzasz odległość do najbliższego punktu planu i bierzesz największą. Im mniejsza, tym lepiej plan pokrywa przestrzeń.</li>
+</ul></details>
+<div class="ctl" id="c3h"></div>
+<div class="scroll" id="t3h"></div>
 <div class="ctl" id="c3"></div>
 <div class="grid2"><div class="plot tall" id="p3a"></div><div class="plot tall" id="p3b"></div></div>
 <div class="wynik" id="w3"></div>
@@ -108,6 +131,26 @@ footer{max-width:920px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 <section id="r4">
 <h2><span class="nr">4</span>Przesiewanie: które parametry można zamrozić</h2>
 <p class="intuicja">Przed budową dokładnego modelu pytamy, które zmienne w ogóle coś zmieniają. Metoda Morrisa robi kilka „spacerów” po przestrzeni i mierzy, o ile zmienia się wynik przy małym kroku. μ* to średni bezwzględny wpływ, σ pokazuje, czy wpływ zależy od położenia (interakcje, nieliniowość). Indeksy Sobola rozbijają wariancję wyniku: S1 to udział samej zmiennej, ST udział razem z interakcjami. Morris jest tani (około 10·(d+1) przypadków), Sobol potrzebuje tysięcy, więc liczymy go na modelu zastępczym, a nie na symulatorze.</p>
+<details class="algo" open><summary>Jak to działa: Morris (efekty elementarne)</summary>
+<ol><li>Skaluj wszystkie zmienne do [0, 1] i przyjmij siatkę p = 4 poziomów (0, 1/3, 2/3, 1). Krok Δ = 2/3.</li>
+<li>Wylosuj punkt startowy na siatce. Zmieniaj zmienne po kolei, w losowej kolejności, każdą o ±Δ. To jedna <b>trajektoria</b>: d + 1 uruchomień symulacji.</li>
+<li>Każdy krok daje jeden <b>efekt elementarny</b> zmiennej <i>i</i>: EE<sub>i</sub> = [f(x + Δ·e<sub>i</sub>) − f(x)] / Δ, czyli o ile zmienił się wynik na jednostkę zakresu.</li>
+<li>Powtórz r razy (r = 10–20). Dla każdej zmiennej policz: <b>μ*</b> = średnia z |EE| (wielkość wpływu), <b>μ</b> = średnia z EE ze znakiem, <b>σ</b> = odchylenie standardowe EE.</li>
+<li>Odczyt: duże μ* oznacza ważną zmienną. Małe μ* i małe σ oznacza kandydata do zamrożenia. Duże σ względem μ* oznacza, że efekt zależy od miejsca: nieliniowość lub interakcje.</li></ol>
+<p class="note">Koszt: r·(d + 1) uruchomień, czyli dla 4 zmiennych i r = 10 tylko 50. Dlatego Morris jest pierwszym krokiem na prawdziwym symulatorze.</p></details>
+<details class="algo" open><summary>Jak to działa: indeksy Sobola (rozkład wariancji)</summary>
+<ol><li>Wynik Y = f(X) jest zmienny, bo zmieniają się wejścia. Całkowitą wariancję V rozkładamy: V = ΣV<sub>i</sub> + ΣV<sub>ij</sub> + …, gdzie V<sub>i</sub> to wkład samej zmiennej <i>i</i>, V<sub>ij</sub> wkład interakcji.</li>
+<li><b>S1<sub>i</sub> = V<sub>i</sub> / V</b>: jaki ułamek wariancji tłumaczy sama zmienna. <b>ST<sub>i</sub></b>: ułamek tłumaczony przez wszystkie człony, w których <i>i</i> występuje (sama + interakcje).</li>
+<li>Estymacja (Saltelli): wylosuj dwie niezależne macierze A i B (N × d). Zrób AB<sub>i</sub> = A, w której kolumnę <i>i</i> podmieniono kolumną z B.</li>
+<div class="formula">S1_i ≈ średnia[ f(B)·( f(AB_i) − f(A) ) ] / V
+ST_i ≈ 0,5 · średnia[ ( f(A) − f(AB_i) )² ] / V</div>
+<li>Koszt N·(d + 2) obliczeń f, zwykle tysiące. Dlatego liczymy go na taniej funkcji, czyli modelu zastępczym, nie na symulatorze.</li>
+<li>Odczyt: ST − S1 to udział interakcji. Suma S1 bliska 1 oznacza model prawie addytywny. ST bliskie 0 oznacza zmienną do zamrożenia.</li></ol></details>
+<p><b>Zabawka:</b> funkcja z czterema wejściami, której odpowiedź znasz: x1 liniowo, x2 kwadratowo, x3 tylko w interakcji z x1, x4 wcale. Przesuwaj współczynniki i obserwuj, jak Morris i Sobol to rozpoznają.</p>
+<div class="ctl" id="c4t"></div>
+<div class="grid2"><div class="plot" id="p4t1"></div><div class="plot" id="p4t2"></div></div>
+<div class="wynik" id="w4t"></div>
+<h3>To samo na prawdziwych danych (model zastępczy z danych o otworach)</h3>
 <div class="ctl" id="c4"></div>
 <div class="grid2"><div class="plot tall" id="p4a"></div><div class="plot tall" id="p4b"></div></div>
 <div class="scroll" id="t4"></div>
@@ -119,6 +162,13 @@ footer{max-width:920px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 <section id="r5">
 <h2><span class="nr">5</span>Dopasowanie i istotność trendu</h2>
 <p class="intuicja">Regresja w skali log-log zamienia prawo potęgowe y ∝ x<sup>b</sup> w prostą: ln y = a + b·ln x. Współczynnik b to wykładnik („gdy x rośnie o 10 %, y zmienia się o około b·10 %”). Każdy współczynnik ma niepewność standardową u(b). Przedział rozszerzony ±2u (k = 2, jak w GUM) pokrywa prawdę z prawdopodobieństwem około 95 %. Jeśli przedział zawiera zero, trend nie wyróżnia się z szumu. Niepewność typu A bierze się z powtórzeń tego samego punktu (u = s/√n), a wykres reszt pokazuje, czy model nie pomija krzywizny.</p>
+<details class="algo" open><summary>Jak to działa: regresja metodą najmniejszych kwadratów</summary>
+<ol><li>Model w skali log-log: ln y = a + b<sub>1</sub>·ln x<sub>1</sub> + b<sub>2</sub>·ln x<sub>2</sub> + … Zapisujesz go jako y = X·b, gdzie kolumny X to jedynki i ln x.</li>
+<li>Wybierasz b tak, żeby suma kwadratów reszt Σ(ln y<sub>i</sub> − ln ŷ<sub>i</sub>)² była najmniejsza: <span class="formula" style="display:inline-block">b = (XᵀX)⁻¹ Xᵀ y</span></li>
+<li>Niepewność współczynnika: s² = SSE/(n − m), a u(b<sub>j</sub>) = s·√[(XᵀX)⁻¹]<sub>jj</sub>. Niepewność rozszerzona to ±2u (k = 2).</li>
+<li>R² = 1 − SSE/SST to udział wyjaśnionej wariancji. R² skorygowane karze za dokładanie zmiennych.</li>
+<li>Kontrola: wykres reszt względem wartości modelu. Jeśli krzywa średnich w przedziałach odbiega od zera, brakuje krzywizny: dodaj człony kwadratowe albo przejdź do GP.</li></ol>
+<p class="note">Kiedy log-log: gdy wynik rośnie o rzędy wielkości i zależności są potęgowe (prześwit, smukłość). Kiedy nie: gdy wynik zmienia znak, jest zerowy lub ma maksimum w środku zakresu.</p></details>
 <div class="ctl" id="c5"></div>
 <div class="scroll" id="t5"></div>
 <div class="grid2"><div class="plot tall" id="p5a"></div><div class="plot tall" id="p5b"></div></div>
@@ -131,6 +181,15 @@ footer{max-width:920px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 <section id="r6">
 <h2><span class="nr">6</span>Model zastępczy: proces gaussowski (GP)</h2>
 <p class="intuicja">GP przechodzi blisko punktów pomiarowych, a między nimi „zgaduje” gładko i mówi, jak bardzo jest niepewny. Długość korelacji ℓ decyduje, jak daleko sięga wpływ jednego punktu: mała ℓ daje poszarpaną krzywą dopasowaną do szumu, duża ℓ wygładza wszystko. Poziom szumu (nugget) mówi, ile rozrzutu uznajemy za losowy. Sprawdzianem jest walidacja krzyżowa (LOO: wyrzuć punkt, przewidź go) i osobny zbiór testowy. Jeśli pasmo ±2σ jest uczciwe, pokrywa około 95 % punktów.</p>
+<details class="algo" open><summary>Jak to działa: proces gaussowski krok po kroku</summary>
+<ol><li>Założenie: dwa punkty blisko siebie dają podobne wyniki. Mierzy to jądro: <span class="formula" style="display:inline-block">k(x, x′) = σ²·exp( −|x − x′|² / (2ℓ²) )</span> Korelacja spada z odległością, a ℓ to jej zasięg (wykres obok).</li>
+<li>Z jądra budujesz macierz K (n × n) dla wszystkich par punktów pomiarowych i dodajesz szum na przekątnej: K + σ²·nf·I.</li>
+<li>W nowym punkcie x* liczysz wektor k* (korelacje z punktami pomiarowymi). Przewidywanie: <div class="formula">μ(x*) = m(x*) + k*ᵀ · K⁻¹ · (y − m)
+σ²(x*) = k(x*, x*) − k*ᵀ · K⁻¹ · k*</div> gdzie m to trend (u nas prosta w skali log-log).</li>
+<li>Znaczenie: blisko punktów σ spada do poziomu szumu, daleko rośnie do σ prior. To dlatego pasmo ±2σ rozszerza się poza danymi.</li>
+<li>Dobór ℓ i szumu: dla każdej pary z siatki liczysz błąd walidacji LOO (każdy punkt przewidziany bez siebie) i bierzesz tę z najlepszą gęstością predykcji. Koszt rośnie jak n³.</li></ol>
+<p class="note">Kiedy GP zamiast regresji: gdy odpowiedź jest gładka, ale nie ma prostej formuły, a danych jest od kilkudziesięciu do kilku tysięcy. Kiedy regresja: mało danych (&lt; 10 na zmienną) albo gdy zależy Ci na interpretowalnym wykładniku.</p></details>
+<div class="plot" id="p6k" style="min-height:220px"></div>
 <div class="ctl" id="c6"></div>
 <div class="plot tall" id="p6"></div>
 <div class="kpi" id="k6"></div>
@@ -142,6 +201,12 @@ footer{max-width:920px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 <section id="r7">
 <h2><span class="nr">7</span>Obszar pożądany i optimum</h2>
 <p class="intuicja">Model zastępczy pozwala narysować mapę decyzji bez nowych renderów. Na osiach są smukłość i prześwit, a kolor to światło pod 45°. Zacieniony na szaro obszar łamie ograniczenia: D_niewid &gt; 1 m albo sztywność &lt; 60 %. W obszarze pożądanym szukamy maksimum τ45. Warto zaznaczyć „bezpieczny” wariant, w którym granicę wyznacza górna wartość z pasma (μ + 2σ), bo optimum leżące równo na granicy ma 50 % szans, że jest po złej stronie.</p>
+<details class="algo" open><summary>Jak to działa: mapa decyzji i wybór optimum</summary>
+<ol><li>Zdefiniuj siatkę komórek w przestrzeni projektowej (tu smukłość × prześwit przy ustalonym stożku i grubości).</li>
+<li>W każdej komórce model zastępczy podaje średnią i σ dla D_niewid, sztywności i τ45.</li>
+<li>Zamień wyniki na warunki: D ≤ limit, sztywność ≥ minimum oraz warunki geometryczne liczone wprost (Ø ≥ 25 µm, mostek = rozstaw − Ø wlotu ≥ 30 µm). Wariant konserwatywny wymaga D<sub>górne</sub> = exp(μ + 2σ) ≤ limit.</li>
+<li>Zamaskuj komórki, które łamią warunki albo leżą daleko od danych (ekstrapolacja).</li>
+<li>Optimum to komórka z największym τ45 wśród pozostałych. Zapisz je razem z przedziałem ±2σ i sprawdź, jak blisko jest granic.</li></ol></details>
 <div class="ctl" id="c7"></div>
 <div class="plot tall" id="p7"></div>
 <div class="kpi" id="k7"></div>
@@ -153,12 +218,82 @@ footer{max-width:920px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 <section id="r8">
 <h2><span class="nr">8</span>Próbkowanie adaptacyjne: mniej renderów</h2>
 <p class="intuicja">Zamiast liczyć od razu setki punktów, liczymy małą partię, dopasowujemy model i wybieramy następną partię tam, gdzie da najwięcej informacji. Trzy kryteria: największa niepewność modelu (tam nie wiemy), okolice granicy ograniczenia (tam zapada decyzja tak/nie) i oczekiwana poprawa τ45 (tam może być optimum). Poniżej symulacja na „prawdziwym” modelu zbudowanym z danych, z regulowanym szumem. Porównujemy ją z samym LHS o tej samej liczbie punktów.</p>
+<details class="algo" open><summary>Jak to działa: pętla próbkowania adaptacyjnego i trzy kryteria</summary>
+<ol><li>Start: mały plan przestrzenny (LHS, tu 8 punktów). Policz symulacje.</li>
+<li>Dopasuj GP osobno dla ln D i ln τ45. Przewidź średnią μ i niepewność σ w każdej komórce mapy.</li>
+<li>Policz trzy oceny komórek i wybierz partię (kilka punktów naraz):
+<div class="formula">U  (niepewność)  = σ_D + σ_τ45
+G  (granica)     = exp( −0,5·(μ_D / σ_D)² )      [μ_D = ln D, granica to D = 1 m]
+EI (poprawa)     = [(μ−f*)·Φ(z) + σ·φ(z)] · P(D ≤ 1 m),  z = (μ−f*)/σ</div>
+gdzie f* to najlepsze dotąd τ45 wśród punktów dopuszczalnych, Φ i φ to dystrybuanta i gęstość rozkładu normalnego.</li>
+<li>Rozsunięcie: ocenę komórki mnożysz przez min(1, d/0,12), gdzie d to odległość do już wybranych punktów, żeby partia nie skupiła się w jednym miejscu. Punkty wybierasz zachłannie, jeden po drugim.</li>
+<li>Policz partię, dopasuj model od nowa i powtarzaj do stabilnej decyzji.</li></ol>
+<p class="note">U odpowiada na „czego nie wiem”, G na „po której stronie granicy jestem”, EI na „gdzie może być lepiej”. Do zawężania granicy najlepsze są G lub mieszana, EI przydaje się dopiero, gdy granica jest znana.</p></details>
 <div class="ctl" id="c8"></div>
 <div class="grid2"><div class="plot tall" id="p8a"></div><div class="plot tall" id="p8b"></div></div>
 <div class="kpi" id="k8"></div>
 <div class="wynik" id="w8"></div>
 <details class="pytanie"><summary>Pytanie: po jakim kryterium kończysz rundy?</summary>
 <p>Gdy decyzja przestaje się zmieniać: granica obszaru pożądanego jest stabilna, rekomendowany punkt nie zmienia się po kolejnej partii, a jego niepewność mieści się w tolerancji projektu. Liczba wykonanych renderów nie jest kryterium, tylko kosztem, który chcemy zminimalizować.</p></details>
+</section>
+
+
+<section id="r9">
+<h2><span class="nr">9</span>Plan prac: jak najszybciej zawęzić obszar i znaleźć wynik</h2>
+<p class="intuicja">Najkrótsza droga do optimum to nie jeden duży plan, tylko seria małych kroków, z których każdy odpowiada na jedno pytanie i może zawęzić obszar poszukiwań. Najpierw tanio usuwasz zmienne, które nie mają znaczenia, potem budujesz model na niewielkiej bazie, a następnie dokładasz punkty tylko tam, gdzie decyzja jest jeszcze niepewna. „Obszar istotny” to komórki, w których optimum jeszcze może leżeć: nie łamią ograniczeń z rozsądnym prawdopodobieństwem i ich górne pasmo wyniku nie jest gorsze niż dolne pasmo najlepszego znanego punktu.</p>
+<h3>Który algorytm na którym etapie</h3>
+<div class="scroll"><table>
+<tr><th>Pytanie</th><th>Algorytm</th><th>Ile uruchomień</th><th>Kiedy nie</th></tr>
+<tr><td>Które zmienne coś zmieniają?</td><td>Morris (lub plan frakcyjny)</td><td>r·(d+1), np. 10·5 = 50</td><td>Gdy wynik jest szumem większym od efektu: wtedy najpierw powtórzenia</td></tr>
+<tr><td>Jak rozłożyć punkty bazowe?</td><td>LHS, Halton, maximin</td><td>ok. 10·d</td><td>Siatka, gdy d &gt; 3</td></tr>
+<tr><td>Jaki jest trend i czy jest istotny?</td><td>Regresja log-log + reszty</td><td>to samo co baza</td><td>Gdy reszty mają krzywiznę</td></tr>
+<tr><td>Jak mieć model do decyzji?</td><td>GP + walidacja LOO i zbiór testowy</td><td>baza + partie</td><td>&lt; 10 punktów na zmienną</td></tr>
+<tr><td>Które zmienne zamrozić ostatecznie, jak interakcje?</td><td>Sobol na modelu GP</td><td>tysiące, ale na modelu</td><td>Na samym symulatorze (za drogo)</td></tr>
+<tr><td>Gdzie liczyć dalej?</td><td>Partie: U, G, EI</td><td>20–50 na rundę</td><td>Gdy model jest nieskalibrowany względem laboratorium</td></tr>
+<tr><td>Które punkty zbudować jako prototypy?</td><td>Optimum, granica, niepewność, pokrycie (rozdz. 10)</td><td>6–12 sztuk</td><td>Gdy pomiar jest droższy niż ryzyko błędu</td></tr>
+</table></div>
+<h3>Plan w sześciu fazach</h3>
+<ol class="kroki">
+<li><b>Faza 0, zero uruchomień (godziny):</b> zapisz wejścia, wyjścia i ograniczenia, przejdź na grupy bezwymiarowe i wyeliminuj oczywiste kombinacje geometrycznie (np. mostek &lt; 30 µm).</li>
+<li><b>Faza 1, przesiewanie (r·(d+1) uruchomień):</b> Morris. Zamroź zmienne o małym μ* i σ. Decyzja: ile zmiennych zostaje.</li>
+<li><b>Faza 2, baza (≈ 10·d' uruchomień, d' to zmienne po przesianiu):</b> LHS lub Halton w zawężonym pudle plus 3–6 powtórzeń do niepewności typu A.</li>
+<li><b>Faza 3, model (bez uruchomień):</b> regresja log-log i GP, walidacja LOO i na zbiorze testowym. Jeśli pokrycie ±2σ nie jest bliskie 95 %, popraw model, zanim policzysz cokolwiek więcej.</li>
+<li><b>Faza 4, partie adaptacyjne (2–4 rundy po 20–50):</b> w każdej rundzie zawęź pudło do obszaru istotnego i wybierz punkty kryteriami U, G, EI. Stop, gdy rekomendowany punkt przestaje się zmieniać.</li>
+<li><b>Faza 5, prototypy (6–12 sztuk) i laboratorium:</b> wybór opisany w rozdz. 10, pomiar, korekta modelu i powrót do fazy 4 z poprawionym modelem.</li>
+</ol>
+<h3>Zawężanie obszaru istotnego wraz z liczbą symulacji</h3>
+<p>Poniżej model GP uczony na coraz większej części danych (losowy podzbiór). Na mapie widać, które komórki są nadal „istotne dla optymalizacji”. Wykres obok pokazuje, jaki ułamek mapy zostaje i czy prawdziwe optimum (z pełnych danych) nadal w nim leży.</p>
+<div class="ctl" id="c9"></div>
+<div class="grid2"><div class="plot tall" id="p9a"></div><div class="plot tall" id="p9b"></div></div>
+<div class="wynik" id="w9"></div>
+<h3>Kalkulator budżetu uruchomień</h3>
+<div class="ctl" id="c9b"></div>
+<div class="plot" id="p9c"></div>
+<div class="wynik" id="w9b"></div>
+<details class="pytanie"><summary>Pytanie: po pierwszej rundzie okazało się, że 85 % mapy nie może zawierać optimum. Co robisz z tą informacją?</summary>
+<p>Zawężasz pudło poszukiwań do obszaru istotnego (z marginesem) i następną partię punktów losujesz tylko tam. Przy czterech zmiennych skrócenie każdego zakresu o połowę zmniejsza objętość 16 razy, więc ta sama liczba uruchomień daje wielokrotnie gęstsze pokrycie. Zawężaj ostrożnie: zostaw margines wynikający z ±2σ i sprawdź, że punkty testowe (nie użyte do uczenia) nadal wpadają do pasma.</p></details>
+</section>
+
+<section id="r10">
+<h2><span class="nr sm">10</span>Od symulacji do prototypów w laboratorium i z powrotem</h2>
+<p class="intuicja">Model zawsze różni się od rzeczywistości: inne odbicia, chropowatość ścianki, tolerancje lasera. Prototypy mają więc dwa zadania naraz: sprawdzić najlepszy kandydat i dowiedzieć się, jak bardzo model się myli. Dlatego nie wybiera się samych optymalnych sztuk. Bierze się optimum (z marginesem bezpieczeństwa), punkt na granicy ograniczenia, punkt o największej niepewności modelu i kilka punktów rozsuniętych po obszarze pożądanym, a najważniejsze sztuki powtarza. Wyniki pomiarów wracają do modelu jako korekta (współczynnik, nachylenie lub model resztowy), po której planujesz kolejną partię.</p>
+<details class="algo" open><summary>Jak to działa: wybór prototypów i korekta modelu</summary>
+<ol><li><b>Optimum konserwatywne:</b> komórka z największym τ45 wśród tych, w których górne pasmo D (exp(μ + 2σ)) mieści się w limicie, a sztywność jest wystarczająca.</li>
+<li><b>Granica:</b> komórka o największym τ45 spośród tych, w których P(D ≤ 1 m) leży między 0,25 a 0,75. Jeśli się pomylisz, tu błąd będzie najbardziej kosztowny.</li>
+<li><b>Największa niepewność:</b> komórka z największą sumą σ<sub>D</sub> + σ<sub>τ45</sub> wśród prawdopodobnie dopuszczalnych. Pomiar tu najwięcej uczy model.</li>
+<li><b>Pokrycie:</b> reszta prototypów algorytmem maximin (największa odległość do już wybranych), z wagą √τ45, żeby nie marnować sztuk w złych miejscach.</li>
+<li><b>Powtórzenia:</b> każdą sztukę mierz 2–3 razy lub wykonaj 2–3 kopie, żeby oddzielić szum pomiaru od różnicy model–rzeczywistość. Niepewność typu A: u = s/√n.</li>
+<li><b>Korekta:</b> dla każdego wyniku policz różnice δ<sub>i</sub> = ln(wynik z lab.) − ln(wynik z modelu). Średnia δ̄ to współczynnik korekty (×exp δ̄), a u = s/√k jego niepewność. Jeśli |δ̄| &gt; 2u, korekta jest istotna. Dodatkowo dopasuj ln lab = a + b·ln model: gdy b ≈ 1 (w ±2u), wystarczy sam współczynnik, a gdy nie, potrzebne jest nachylenie lub model resztowy GP.</li>
+<li><b>Powrót do obliczeń:</b> wstaw korektę do modelu, przelicz mapę i optimum, wybierz kolejną partię prototypów i dołóż symulacje tam, gdzie po korekcie decyzja jest niepewna. Najlepiej też znaleźć przyczynę różnicy (parametr symulatora do kalibracji), zamiast tylko mnożyć wynik.</li></ol></details>
+<p>Symulacja pętli: „laboratorium” to ten sam model z ukrytym odchyleniem (które ustawiasz suwakami) i szumem pomiaru. Zobacz, czy po dwóch rundach korekta odnajduje prawdziwe odchylenie i jak zmienia rekomendację.</p>
+<div class="ctl" id="c10"></div>
+<div class="plot tall" id="p10a"></div>
+<div class="scroll" id="t10"></div>
+<div class="plot" id="p10b"></div>
+<div class="kpi" id="k10"></div>
+<div class="wynik" id="w10"></div>
+<details class="pytanie"><summary>Pytanie: pomiary wszystkich 8 prototypów dają D o 25 % większe niż model, a τ45 zgodne. Co robisz?</summary>
+<p>Wprowadzasz korektę mnożnikową tylko dla D (δ̄ ≈ ln 1,25 z niepewnością ±2u z 8 punktów), przeliczasz mapę, w której granica D = 1 m przesuwa się, i wybierasz nowe prototypy w poprawionym obszarze pożądanym. Równolegle szukasz przyczyny (np. chropowatość ścianki lub odbicia w symulatorze), bo mnożnik naprawia skutek, a nie model. Gdy b w ln lab = a + b·ln model wyraźnie różni się od 1, sam mnożnik nie wystarczy.</p></details>
 </section>
 
 <section id="sciaga">
@@ -173,7 +308,7 @@ footer{max-width:920px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 <li><b>Dopasuj model.</b> Regresja log-log ze współczynnikami ±2u i wykresem reszt. GP, gdy w resztach widać krzywiznę.</li>
 <li><b>Zwaliduj.</b> LOO, zbiór testowy, pokrycie ±2σ ≈ 95 %. Nie ekstrapoluj poza zakres danych.</li>
 <li><b>Próbkuj adaptacyjnie.</b> Partie po 20–50 punktów: niepewność, granica ograniczeń, oczekiwana poprawa. Powtarzaj do stabilnej decyzji.</li>
-<li><b>Zaraportuj.</b> Mapa obszaru pożądanego, optimum z przedziałem, wrażliwość („+10 % parametru → ±x % wyniku”) i zakres ważności modelu.</li>
+<li><b>Zaraportuj i zamknij pętlę.</b> Mapa obszaru pożądanego, optimum z przedziałem, wrażliwość („+10 % parametru → ±x % wyniku”), zakres ważności modelu. Wybierz 6–12 prototypów (optimum, granica, niepewność, pokrycie, powtórzenia), zmierz, skoryguj model i wróć do kroków 7–9.</li>
 </ol>
 </section>
 
@@ -509,6 +644,17 @@ function makeDesign(type, N, seed) {
   if (type === 'ofat') return designOFAT(N); if (type === 'grid') return designGrid(N); if (type === 'rand') return designRandom(N, r);
   if (type === 'lhs') return designLHS(N, r); if (type === 'halton') return designHalton(N); return designMaximin(N, r);
 }
+function haltonSteps(i, b) { const dg = []; let n = i; while (n > 0) { dg.push(n % b); n = Math.floor(n / b); } const fwd = dg.slice().reverse().join(''); const rev = dg.join(''); let v = 0, f = 1; for (const d of dg) { f /= b; v += d * f; } return { fwd: fwd || '0', rev: rev || '0', v }; }
+CH.r3h = {
+  init() {
+    ctl('c3h', [{ id: 'hi', label: 'Numer punktu i', min: 1, max: 40, step: 1, value: 6 }, { id: 'hb', type: 'select', label: 'Baza b', value: '2', options: [['2', '2'], ['3', '3'], ['5', '5']] }], () => this.render()); this.render();
+  },
+  render() {
+    const i = val('hi'), b = +$('hb').value; const o = haltonSteps(i, b); const rows = [];
+    for (let q = 1; q <= 12; q++) { const a = haltonSteps(q, 2), c = haltonSteps(q, 3); rows.push([q, a.fwd, '0,' + a.rev, fmt(a.v, 3), c.fwd, '0,' + c.rev, fmt(c.v, 3), `(${fmt(a.v, 3)}; ${fmt(c.v, 3)})`]); }
+    $('t3h').innerHTML = `<p><b>Kalkulator Haltona:</b> i = ${i} w bazie ${b} to <b>${o.fwd}</b>; odwrócone cyfry <b>${o.rev}</b>; po przecinku: 0,${o.rev} w bazie ${b} = <b>${fmt(o.v, 4)}</b>.</p>` + table(rows, ['i', 'baza 2', 'odwrócone', 'x₁', 'baza 3', 'odwrócone', 'x₂', 'punkt (x₁; x₂)']);
+  },
+};
 CH.r3 = {
   seed: 5, timer: null, cache: null,
   init() {
@@ -556,26 +702,50 @@ CH.r3 = {
 };
 
 /* ---------- 4. Przesiewanie ---------- */
-function morris(g, r, rng) {
-  const d = g.d, del = 2 / 3, lev = [0, 1 / 3, 2 / 3, 1]; const EE = Array.from({ length: d }, () => []);
+function morris(f, d, r, rng) {
+  const del = 2 / 3, lev = [0, 1 / 3, 2 / 3, 1]; const EE = Array.from({ length: d }, () => []);
   for (let t = 0; t < r; t++) {
-    const x = Array.from({ length: d }, () => lev[Math.floor(rng() * 4)]); let f0 = gpPred(g, x)[0];
+    const x = Array.from({ length: d }, () => lev[Math.floor(rng() * 4)]); let f0 = f(x);
     for (const i of shuffle([...Array(d).keys()], rng)) {
       const up = x[i] + del <= 1 + 1e-9, dn = x[i] - del >= -1e-9; const dir = up && dn ? (rng() < 0.5 ? 1 : -1) : up ? 1 : -1;
-      x[i] += dir * del; const f1 = gpPred(g, x)[0]; EE[i].push((f1 - f0) / (dir * del)); f0 = f1;
+      x[i] += dir * del; const f1 = f(x); EE[i].push((f1 - f0) / (dir * del)); f0 = f1;
     }
   }
   return EE.map((e) => ({ mus: mean(e.map(Math.abs)), mu: mean(e), sig: e.length > 1 ? Math.sqrt(variance(e)) : 0 }));
 }
-function sobol(g, N, rng) {
-  const d = g.d, A = Array.from({ length: N }, () => Array.from({ length: d }, rng)), B = Array.from({ length: N }, () => Array.from({ length: d }, rng));
-  const fA = A.map((x) => gpPred(g, x)[0]), fB = B.map((x) => gpPred(g, x)[0]); const V = variance(fA.concat(fB)); const S1 = [], ST = [];
+function sobol(f, d, N, rng) {
+  const A = Array.from({ length: N }, () => Array.from({ length: d }, rng)), B = Array.from({ length: N }, () => Array.from({ length: d }, rng));
+  const fA = A.map(f), fB = B.map(f); const V = variance(fA.concat(fB)); const S1 = [], ST = [];
+  if (!(V > 1e-12)) return { S1: new Array(d).fill(0), ST: new Array(d).fill(0), V: 0 };
   for (let i = 0; i < d; i++) {
-    const fAB = A.map((x, n) => { const z = x.slice(); z[i] = B[n][i]; return gpPred(g, z)[0]; });
+    const fAB = A.map((x, n) => { const z = x.slice(); z[i] = B[n][i]; return f(z); });
     S1.push(mean(fB.map((v, n) => v * (fAB[n] - fA[n]))) / V); ST.push(0.5 * mean(fA.map((v, n) => (v - fAB[n]) * (v - fAB[n]))) / V);
   }
   return { S1, ST, V };
 }
+const TOYN = ['x1 (liniowo + interakcja)', 'x2 (kwadratowo)', 'x3 (tylko interakcja z x1)', 'x4 (nic)'];
+CH.r4toy = {
+  init() {
+    ctl('c4t', [
+      { id: 'tA', label: 'A: siła liniowego x1', min: 0, max: 3, step: 0.1, value: 1, dec: 1 },
+      { id: 'tB', label: 'B: siła kwadratowego x2', min: 0, max: 3, step: 0.1, value: 1, dec: 1 },
+      { id: 'tC', label: 'C: siła interakcji x1·x3', min: 0, max: 3, step: 0.1, value: 1, dec: 1 },
+    ], () => this.render());
+    this.render();
+  },
+  render() {
+    const A = val('tA'), B = val('tB'), C = val('tC'); const c = COL();
+    const f = (x) => A * x[0] + B * 4 * (x[1] - 0.5) * (x[1] - 0.5) + C * 4 * (x[0] - 0.5) * (x[2] - 0.5);
+    const M = morris(f, 4, 20, rngMake(11)), S = sobol(f, 4, 1500, rngMake(12));
+    draw('p4t1', [{ type: 'scatter', mode: 'markers+text', x: M.map((q) => q.mus), y: M.map((q) => q.sig), text: ['x1', 'x2', 'x3', 'x4'], textposition: 'top center', cliponaxis: false, marker: { size: 12, color: c.a } }],
+      { title: { text: 'Morris na funkcji zabawkowej (r = 20)', font: { size: 13 } }, xaxis: { title: { text: 'μ* [jednostki wyniku na cały zakres]' }, rangemode: 'tozero' }, yaxis: { title: { text: 'σ [jednostki wyniku na cały zakres]' }, rangemode: 'tozero' }, margin: { t: 44 } });
+    draw('p4t2', [
+      { type: 'bar', name: 'S1', x: ['x1', 'x2', 'x3', 'x4'], y: S.S1.map((v) => Math.max(v, 0)), marker: { color: c.a } },
+      { type: 'bar', name: 'ST', x: ['x1', 'x2', 'x3', 'x4'], y: S.ST.map((v) => Math.max(v, 0)), marker: { color: c.b } },
+    ], { barmode: 'group', title: { text: 'Sobol na funkcji zabawkowej (N = 1500)', font: { size: 13 } }, yaxis: { title: { text: 'indeks [–]' }, range: [0, 1.05] }, margin: { t: 44 } });
+    $('w4t').innerHTML = `<b class="t">Jak to czytać:</b> x4 nie wpływa na wynik, więc μ* i ST są bliskie zera: zamrażasz. x2 jest nieliniowy, więc ma duże σ przy μ* o podobnej wielkości. x3 nie ma żadnego własnego wpływu (S1 ≈ ${fmt(Math.max(S.S1[2], 0), 2)}), ale ST = ${fmt(S.ST[2], 2)}, bo działa w interakcji z x1: gdyby patrzeć tylko na S1, zamroziłbyś zmienną, która jest ważna. Różnica ST − S1 dla x1 (${fmt(S.ST[0] - S.S1[0], 2)}) to jego udział w interakcji. Ustaw C = 0, a ST x3 spadnie do zera.`;
+  },
+};
 CH.r4 = {
   init() {
     ctl('c4', [
@@ -591,7 +761,7 @@ CH.r4 = {
     const out = $('o4').value; $('w4').innerHTML = '<span class="spin">liczę model zastępczy…</span>';
     later(() => {
       const m = getModel(out), g = m.g, r = val('rm4'), N = val('N4'), seed = val('sd4'); const c = COL();
-      const M = morris(g, r, rngMake(100 + seed)), S = sobol(g, N, rngMake(200 + seed));
+      const fg = (x) => gpPred(g, x)[0]; const M = morris(fg, g.d, r, rngMake(100 + seed)), S = sobol(fg, g.d, N, rngMake(200 + seed));
       draw('p4a', [{ type: 'scatter', mode: 'markers+text', x: M.map((q) => q.mus), y: M.map((q) => q.sig), text: NAZWY, textposition: 'top center', cliponaxis: false, marker: { size: 12, color: c.a } }],
         { title: { text: `Morris: ${r} trajektorii = ${r * 5} przypadków`, font: { size: 13 } }, xaxis: { title: { text: 'μ* [Δln wyniku na cały zakres]' }, rangemode: 'tozero' }, yaxis: { title: { text: 'σ [Δln wyniku na cały zakres]' }, rangemode: 'tozero' }, margin: { t: 44 } });
       draw('p4b', [
@@ -707,6 +877,9 @@ CH.r6 = {
       { type: 'scatter', mode: 'markers', x: ptsTr.map((i) => PTS[i].phi), y: ptsTr.map((i) => Math.exp(PTS[i][key])), name: 'trening (blisko przekroju)', marker: { size: 9, color: c.b, line: { width: 1, color: c.fg } } },
       { type: 'scatter', mode: 'markers', x: ptsTe.map((i) => PTS[i].phi), y: ptsTe.map((i) => Math.exp(PTS[i][key])), name: 'test (nie użyte do dopasowania)', marker: { size: 10, symbol: 'diamond-open', color: c.ok, line: { width: 2 } } },
     ], { xaxis: lax(0.3, 33, 'prześwit φ [%] (skala log)'), yaxis: lax(Math.min(...lw) * 0.8, Math.max(...hi) * 1.2, `${OUTS[out].nm} [${un}]`), title: { text: `Przekrój przy t/Ø = ${fmt(s0, 1)}, stożek = ${fmt(k0, 1)}, t = 0,5 mm (punkty w pobliżu przekroju)`, font: { size: 12 } }, margin: { t: 44, b: 90 }, legend: { y: -0.3 } });
+    const rr = Array.from({ length: 61 }, (_, i) => i * 0.025);
+    draw('p6k', [{ type: 'scatter', mode: 'lines', x: rr, y: rr.map((r) => Math.exp(-r * r / (2 * ell * ell))), line: { color: c.a, width: 3 }, name: 'korelacja k(r)/σ²' }, { type: 'scatter', mode: 'lines', x: [ell, ell], y: [0, 1], line: { color: c.b, dash: 'dot' }, name: 'r = ℓ' }],
+      { title: { text: `Jądro GP przy ℓ = ${fmt(ell, 2)}: jak silnie punkt wpływa na sąsiadów`, font: { size: 13 } }, xaxis: { title: { text: 'odległość między punktami w kostce jednostkowej [–]' } }, yaxis: { title: { text: 'korelacja [–]' }, range: [0, 1.05] }, margin: { t: 44 }, legend: { y: -0.4 } });
     $('k6').innerHTML = [[`${dtr.X.length} / ${dte.X.length}`, 'punkty trening / test'], [fmt(lo.q2, 3), 'Q² (LOO)'], [pct(lo.cover, 0), 'pokrycie ±2σ w LOO'], [pct(cte, 0), 'pokrycie ±2σ na teście'], [`×/÷ ${fmt(Math.exp(rm), 2)}`, 'typowy błąd na teście (RMSE)']].map(([a, b]) => `<div><b>${a}</b>${b}</div>`).join('');
     const verdict = cte < 0.88 ? '<span class="nie">model jest zbyt pewny siebie (pasmo za wąskie)</span>' : cte > 0.99 ? '<span class="nie">model jest zbyt ostrożny (pasmo za szerokie)</span>' : '<span class="tak">pasmo jest uczciwe</span>';
     $('w6').innerHTML = `<b class="t">Co z tego wynika dla otworków</b> (${OUTS[out].nm}): przy ℓ = ${fmt(ell, 2)} i szumie ${fmt(100 * nf, 1)} % pokrycie na punktach testowych to <b>${pct(cte, 0)}</b>: ${verdict}. Typowa pomyłka modelu to ×/÷ ${fmt(Math.exp(rm), 2)}, więc wynik z modelu należy traktować jako przedział, nie liczbę. Spróbuj ℓ = 0,05 (krzywa łapie szum i Q² spada) i ℓ = 1,5 (krzywa się prostuje). Przycisk dobiera ℓ i szum automatycznie na podstawie LOO.`;
@@ -865,12 +1038,192 @@ CH.r8 = {
   },
 };
 
+
+'use strict';
+/* ---------- wspólne: mapa komórek z modeli GP ---------- */
+const GM = 30;
+const HULL = {};
+function hullU(t) { if (!HULL[t]) HULL[t] = PTS.map((p, i) => [p, i]).filter(([p]) => p.t === t).map(([p, i]) => nrm(RAWIN[i])); return HULL[t]; }
+function subModel(out, n, order) {
+  const key = OUTS[out].key; const ids = order.filter((i) => isFinite(PTS[i][key])).slice(0, n); const h = getModel(out);
+  return gpFit(ids.map((i) => nrm(RAWIN[i])), ids.map((i) => PTS[i][key]), h.ell, h.nf);
+}
+function fullModels() { return { D: getModel('D').g, sz: getModel('sz').g, t45: getModel('tau45').g }; }
+function cellsEval(m, k, t, G) {
+  const hull = hullU(t); const out = []; let q = 0;
+  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) {
+    const s = 1 + 11 * i / (G - 1), ph = 0.5 * Math.pow(60, j / (G - 1)); const u = toU(s, k, ph, t);
+    let nn = 9; for (const h of hull) { const dd = d2(u, h); if (dd < nn) nn = dd; }
+    const dm = 1000 * t / s, pm = dm * Math.sqrt(100 * HEX / ph), br = pm - k * dm;
+    const [lD, sD] = gpPred(m.D, u, true), [l45, s45] = gpPred(m.t45, u, true), lS = gpPred(m.sz, u, false)[0];
+    out.push({ q: q++, i, j, s, ph, u, dm, pm, br, geo: dm >= 25 && br >= 30, far: Math.sqrt(nn) > 0.3, lD, sD, lS, l45, s45 });
+  }
+  return out;
+}
+const gridXY = (G) => ({ xs: Array.from({ length: G }, (_, i) => 1 + 11 * i / (G - 1)), ys: Array.from({ length: G }, (_, j) => 0.5 * Math.pow(60, j / (G - 1))) });
+const to2D = (cs, G, f) => { const z = Array.from({ length: G }, () => new Array(G).fill(null)); cs.forEach((c) => { const v = f(c); if (v !== undefined) z[c.j][c.i] = v; }); return z; };
+
+/* ---------- 9. Plan prac ---------- */
+const ORD9 = shuffle([...Array(PTS.length).keys()], rngMake(21));
+CH.r9 = {
+  res: null,
+  init() {
+    const ns = [12, 24, 48, 96, PTS.length];
+    ctl('c9', [
+      { id: 'kk9', label: 'Stożek', min: 1, max: 4, step: 0.1, value: 2, dec: 1 },
+      { id: 't9', type: 'select', label: 'Grubość blachy', value: '0.5', options: [['0.4', '0,4 mm'], ['0.5', '0,5 mm']] },
+      { id: 'n9', type: 'select', label: 'Liczba symulacji n (podzbiór danych)', value: '48', options: ns.map((n) => [String(n), n === PTS.length ? `wszystkie (${n})` : String(n)]) },
+    ], (id) => { if (id === 'n9') this.draw(); else this.go(); });
+    ctl('c9b', [
+      { id: 'D0', label: 'Zmienne na starcie d₀', min: 3, max: 10, step: 1, value: 6 },
+      { id: 'L9', label: 'Poziomy siatki L', min: 3, max: 7, step: 1, value: 5 },
+      { id: 'd9', label: 'Zmienne po przesianiu d', min: 2, max: 8, step: 1, value: 4 },
+      { id: 'rm9', label: 'Trajektorie Morrisa r', min: 5, max: 30, step: 1, value: 10 },
+      { id: 'rp9', label: 'Powtórzenia (łącznie)', min: 0, max: 30, step: 1, value: 12 },
+      { id: 'R9', label: 'Rundy adaptacyjne', min: 1, max: 6, step: 1, value: 3 },
+      { id: 'b9', label: 'Partia na rundę', min: 10, max: 50, step: 5, value: 25 },
+      { id: 'tr9', label: 'Czas jednego uruchomienia', min: 1, max: 60, step: 1, value: 10, unit: 'min' },
+    ], () => this.budget());
+    this.budget(); this.go();
+  },
+  go: debounce(function () { CH.r9.compute(); }, 150),
+  compute() {
+    $('w9').innerHTML = '<span class="spin">uczę modele na kolejnych podzbiorach danych…</span>';
+    later(() => {
+      const k = val('kk9'), t = +$('t9').value, Dl = 1, zl = 60; const ns = [12, 24, 48, 96, PTS.length]; const full = fullModels();
+      const cf = cellsEval(full, k, t, GM); const feas = cf.map((c) => !c.far && c.geo && Math.exp(c.lS) >= zl && Math.exp(c.lD) <= Dl); let opt = -1;
+      cf.forEach((c, q) => { if (feas[q] && (opt < 0 || c.l45 > cf[opt].l45)) opt = q; });
+      const nHull = cf.filter((c) => !c.far && c.geo).length;
+      this.res = { k, t, opt, cf, feasPct: feas.filter(Boolean).length / Math.max(nHull, 1), nHull, list: ns.map((n) => {
+        const mods = n >= PTS.length ? full : { D: subModel('D', n, ORD9), sz: subModel('sz', n, ORD9), t45: subModel('tau45', n, ORD9) }; const cs = cellsEval(mods, k, t, GM);
+        let L = -Infinity; cs.forEach((c) => { if (!c.far && c.geo && Math.exp(c.lS) >= zl && normCdf(-c.lD / c.sD) >= 0.95) L = Math.max(L, c.l45 - 2 * c.s45); });
+        const rel = cs.map((c) => !c.far && c.geo && Math.exp(c.lS) >= zl - 3 && normCdf(-c.lD / c.sD) >= 0.05 && c.l45 + 2 * c.s45 >= L - Math.log(1.5));
+        return { n, cs, rel, pct: rel.filter(Boolean).length / Math.max(nHull, 1), has: opt >= 0 && rel[opt], L };
+      }) };
+      this.draw();
+    });
+  },
+  draw() {
+    const R = this.res; if (!R) return; const c = COL(); const n = +$('n9').value || PTS.length; const it = R.list.find((q) => q.n === n) || R.list[R.list.length - 1]; const { xs, ys } = gridXY(GM);
+    const z0 = to2D(it.cs, GM, (q) => (q.far ? 1 : undefined)), z1 = to2D(it.cs, GM, (q) => (!q.far && !it.rel[q.q] ? 1 : undefined)), z2 = to2D(it.cs, GM, (q) => (it.rel[q.q] ? Math.exp(q.l45) : undefined));
+    const used = ORD9.slice(0, n).filter((i) => PTS[i].t === R.t); const o = R.opt >= 0 ? R.cf[R.opt] : null;
+    draw('p9a', [
+      { type: 'heatmap', x: xs, y: ys, z: z0, colorscale: [[0, 'rgba(128,128,128,.25)'], [1, 'rgba(128,128,128,.25)']], showscale: false, hoverinfo: 'skip' },
+      { type: 'heatmap', x: xs, y: ys, z: z1, colorscale: [[0, 'rgba(220,38,38,.28)'], [1, 'rgba(220,38,38,.28)']], showscale: false, hoverinfo: 'skip' },
+      { type: 'heatmap', x: xs, y: ys, z: z2, colorscale: 'Viridis', showscale: false, hovertemplate: 'smukłość %{x:.1f}<br>φ %{y:.1f} %<br>τ45 %{z:.2f} %<extra></extra>' },
+      { type: 'scatter', mode: 'markers', x: used.map((i) => PTS[i].s), y: used.map((i) => PTS[i].phi), name: 'dane użyte do modelu', marker: { size: 4, color: c.fg, opacity: 0.6 } },
+      ...(o ? [{ type: 'scatter', mode: 'markers', x: [o.s], y: [o.ph], name: 'prawdziwe optimum (pełne dane)', marker: { size: 15, symbol: 'star', color: c.b, line: { width: 1.5, color: c.fg } } }] : []),
+    ], { title: { text: `n = ${n}: kolor = obszar istotny, czerwone = wykluczone, szare = brak danych`, font: { size: 12 } }, xaxis: { title: { text: 'smukłość t/Ø [–]' }, range: [1, 12] }, yaxis: lax(0.5, 30, 'prześwit φ [%] (skala log)'), margin: MOB() ? { b: 120, l: 48, r: 8 } : { b: 100 }, legend: { y: -0.3 } });
+    draw('p9b', [
+      { type: 'bar', x: R.list.map((q) => String(q.n)), y: R.list.map((q) => 100 * q.pct), marker: { color: R.list.map((q) => (q.has ? c.ok : c.bad)) }, text: R.list.map((q) => fmt(100 * q.pct, 0) + ' %' + (q.has ? '' : ' ✖')), textposition: 'outside', cliponaxis: false, name: 'obszar istotny' },
+      { type: 'scatter', mode: 'lines', x: R.list.map((q) => String(q.n)), y: R.list.map(() => 100 * R.feasPct), line: { color: c.b, dash: 'dot', width: 2 }, name: 'obszar naprawdę dopuszczalny (pełne dane)' },
+    ], { title: { text: 'Jaki ułamek mapy zostaje istotny', font: { size: 13 } }, xaxis: { title: { text: 'liczba symulacji n użytych do modelu [–]' }, type: 'category' }, yaxis: { title: { text: 'obszar istotny [% mapy objętej danymi]' }, range: [0, 118] }, margin: { t: 44 }, legend: { y: -0.35 } });
+    const f0 = R.list[0], fl = R.list[R.list.length - 1]; const lost = R.list.filter((q) => !q.has).map((q) => q.n);
+    $('w9').innerHTML = `<b class="t">Co z tego wynika dla otworków:</b> przy stożku ${fmt(R.k, 1)} i grubości ${fmt(R.t, 1)} mm już model na ${f0.n} symulacjach wskazuje obszar istotny o powierzchni ${pct(f0.pct, 0)} mapy, na ${R.list[2].n} symulacjach ${pct(R.list[2].pct, 0)}, a na wszystkich ${fl.n} ${pct(fl.pct, 0)}. Dopuszczalne jest ${pct(R.feasPct, 0)} mapy, ale optimum leży przy granicy D, więc interesuje nas wąski pas przy niej. Obszar nie kurczy się dalej, bo od pewnego n ogranicza go szum i sama geometria, nie liczba symulacji. ${R.list[2].has ? 'Prawdziwe optimum (gwiazdka) zostaje w środku' : 'Prawdziwe optimum wypadło poza obszar istotny (✖)'} już przy n = 48${lost.length ? '; poza obszarem było przy n = ' + lost.join(', ') + ': zbyt wczesne zawężanie jest ryzykowne' : ''}. <span class="note">Istotne = P(D ≤ 1 m) ≥ 5 %, sztywność ≥ 57 %, geometria dopuszczalna i górne pasmo τ45 (μ + 2σ) nie niższe niż dolne pasmo najlepszego pewnego punktu podzielone przez 1,5. Wynik zależy od losowego podzbioru danych.</span>`;
+  },
+  budget() {
+    const D0 = val('D0'), L = val('L9'), d = Math.min(val('d9'), D0), r = val('rm9'), rp = val('rp9'), R = val('R9'), b = val('b9'), tr = val('tr9'); const c = COL();
+    const ph = [['Faza 1: Morris', r * (D0 + 1)], ['Faza 2: baza 10·d', 10 * d], ['Faza 2: powtórzenia', rp], ['Faza 4: partie adaptacyjne', R * b]]; const tot = sum(ph.map((q) => q[1])); const grid = Math.pow(L, D0);
+    draw('p9c', [{ type: 'bar', x: ph.map((q) => q[0]), y: ph.map((q) => q[1]), marker: { color: [c.a, c.b, c.mu, c.ok] }, text: ph.map((q) => String(q[1])), textposition: 'outside', cliponaxis: false }], { title: { text: `Razem ${fmt(tot, 0)} uruchomień (siatka: ${fmt(grid, 0)})`, font: { size: 13 } }, yaxis: { title: { text: 'liczba uruchomień [–]' }, rangemode: 'tozero' }, xaxis: { tickangle: -15 }, margin: { t: 44, b: 80 } });
+    $('w9b').innerHTML = `<b class="t">Co z tego wynika:</b> plan to <b>${fmt(tot, 0)}</b> uruchomień, czyli ok. <b>${fmtTime(tot * tr)}</b> pracy (jedno stanowisko, ${tr} min na przypadek), a siatka L<sup>d₀</sup> = ${fmt(grid, 0)} to <b>${fmtTime(grid * tr)}</b>, czyli ${fmt(grid / tot, 0)} razy więcej. Przesianie z ${D0} do ${d} zmiennych kosztuje ${fmt(r * (D0 + 1), 0)} uruchomień, a oszczędza w bazie ${fmt(10 * (D0 - d), 0)} i w każdej rundzie mniejszą przestrzeń. Prototypy laboratoryjne liczysz osobno (rozdz. 10).`;
+  },
+  render() { this.budget(); this.draw(); },
+};
+
+/* ---------- 10. Prototypy i laboratorium ---------- */
+CH.r10 = {
+  S: null, cs: null,
+  init() {
+    ctl('c10', [
+      { id: 'kk10', label: 'Stożek', min: 1, max: 4, step: 0.1, value: 2, dec: 1 },
+      { id: 't10', type: 'select', label: 'Grubość blachy', value: '0.5', options: [['0.4', '0,4 mm'], ['0.5', '0,5 mm']] },
+      { id: 'kp10', label: 'Prototypów w rundzie', min: 4, max: 10, step: 1, value: 6 },
+      { id: 'rep10', label: 'Powtórzeń pomiaru na sztukę', min: 1, max: 4, step: 1, value: 2 },
+      { id: 'b45', label: 'Ukryte odchylenie lab.: τ45', min: -50, max: 50, step: 5, value: -25, unit: '%' },
+      { id: 'bD', label: 'Ukryte odchylenie lab.: D_niewid', min: -40, max: 60, step: 5, value: 20, unit: '%' },
+      { id: 'nz10', label: 'Szum pomiaru (jedna próba)', min: 2, max: 30, step: 1, value: 8, unit: '%' },
+      { id: 'sel10', type: 'button', label: '1. Wybierz prototypy' },
+      { id: 'mes10', type: 'button', label: '2. Zmierz w laboratorium' },
+      { id: 'cor10', type: 'button', label: '3. Skoryguj model', cls: '' },
+      { id: 'rs10', type: 'button', label: 'Od nowa', cls: 'sec' },
+    ], (id) => {
+      if (id === 'sel10') this.select(); else if (id === 'mes10') this.measure(); else if (id === 'cor10') this.correct(); else if (id === 'rs10') this.reset(); else if (id === 'kk10' || id === 't10') this.reset(); else this.render();
+    });
+    this.reset();
+  },
+  reset() {
+    $('w10').innerHTML = '<span class="spin">liczę mapę…</span>';
+    later(() => { const k = val('kk10'), t = +$('t10').value; this.k = k; this.t = t; this.cs = cellsEval(fullModels(), k, t, GM); this.S = { protos: [], meas: [], c45: 0, cD: 0, round: 0, rng: rngMake(404), corrected: false }; this.render(); });
+  },
+  cand() { return this.cs.filter((c) => !c.far && c.geo && Math.exp(c.lS) >= 60); },
+  select() {
+    const S = this.S; if (!S) return; if (S.protos.some((p) => !p.measured)) { this.msg = 'Najpierw zmierz wybrane prototypy (krok 2).'; this.render(); return; }
+    const kp = val('kp10'); const cand = this.cand(); const Pf = (c) => normCdf(-(c.lD + S.cD) / c.sD); const taken = new Set(S.protos.map((p) => p.c.q)); const out = [];
+    const add = (role, c) => { if (c && !taken.has(c.q)) { out.push({ role, c, round: S.round + 1, measured: false }); taken.add(c.q); } };
+    let best = null; for (const c of cand) if (!taken.has(c.q) && c.lD + S.cD + 2 * c.sD <= 0 && (!best || c.l45 > best.l45)) best = c;
+    if (!best) for (const c of cand) if (!taken.has(c.q) && Pf(c) > 0.5 && (!best || c.l45 > best.l45)) best = c; add('optimum (z zapasem)', best);
+    best = null; for (const c of cand) { const p = Pf(c); if (!taken.has(c.q) && p >= 0.25 && p <= 0.75 && (!best || c.l45 > best.l45)) best = c; } add('granica D', best);
+    best = null; for (const c of cand) if (!taken.has(c.q) && Pf(c) > 0.1 && (!best || c.sD + c.s45 > best.sD + best.s45)) best = c; add('największa niepewność', best);
+    const mx = Math.max(...cand.map((c) => c.l45 + S.c45)); const exist = () => S.protos.concat(out).map((p) => p.c.u);
+    while (out.length < kp) {
+      let bc = null, bv = -1; for (const c of cand) { if (taken.has(c.q) || Pf(c) < 0.1) continue; let dm = 9; for (const u of exist()) dm = Math.min(dm, d2(c.u, u)); const v = Math.sqrt(dm) * Math.sqrt(Math.exp(c.l45 + S.c45 - mx)); if (v > bv) { bv = v; bc = c; } }
+      if (!bc) break; add('pokrycie (maximin)', bc);
+    }
+    S.round++; S.protos.push(...out); this.msg = `Runda ${S.round}: wybrano ${out.length} prototypów. Teraz zmierz je (krok 2).`; this.render();
+  },
+  measure() {
+    const S = this.S; if (!S) return; const pend = S.protos.filter((p) => !p.measured); if (!pend.length) { this.msg = 'Brak niezmierzonych prototypów: wybierz je (krok 1).'; this.render(); return; }
+    const rep = val('rep10'), nz = val('nz10') / 100, b45 = Math.log(1 + val('b45') / 100), bD = Math.log(1 + val('bD') / 100);
+    for (const p of pend) { p.rep = rep; p.l45 = p.c.l45 + b45 + nz / Math.sqrt(rep) * gauss(S.rng); p.lD = p.c.lD + bD + nz / Math.sqrt(rep) * gauss(S.rng); p.measured = true; p.u = nz / Math.sqrt(rep); }
+    this.msg = `Zmierzono ${pend.length} sztuk (po ${rep} pomiary). Różnice lab./model widać na wykresie. Krok 3 liczy korektę.`; this.render();
+  },
+  correct() {
+    const S = this.S; if (!S) return; const m = S.protos.filter((p) => p.measured); if (!m.length) { this.msg = 'Brak pomiarów do korekty.'; this.render(); return; }
+    const est = (f) => { const d = m.map(f); const k = d.length; const mu = mean(d); const sd = k > 1 ? Math.sqrt(variance(d)) : 0; return { mu, u: k > 1 ? sd / Math.sqrt(k) : NaN, k, sd }; };
+    S.e45 = est((p) => p.l45 - p.c.l45); S.eD = est((p) => p.lD - p.c.lD); S.c45 = S.e45.mu; S.cD = S.eD.mu; S.corrected = true;
+    if (m.length >= 4) { const sl = (key, kk) => { const o = ols(m.map((p) => [1, p.c[kk]]), m.map((p) => p[key])); return { b: o.b[1], u: o.se[1] }; }; S.s45 = sl('l45', 'l45'); S.sD = sl('lD', 'lD'); }
+    this.msg = 'Model skorygowany o średnie odchylenie z pomiarów; mapa i rekomendacja przeliczone.'; this.render();
+  },
+  rec(cD, c45) { let best = null; for (const c of this.cand()) if (c.lD + cD + 2 * c.sD <= 0 && (!best || c.l45 + c45 > best.l45 + c45)) best = c; return best; },
+  render() {
+    const S = this.S, cs = this.cs; if (!S || !cs) return; const c = COL(); const b45 = Math.log(1 + val('b45') / 100), bD = Math.log(1 + val('bD') / 100); const { xs, ys } = gridXY(GM);
+    const cand = this.cand(); const ok = (q) => !q.far && q.geo && Math.exp(q.lS) >= 60 && q.lD + S.cD + 2 * q.sD <= 0;
+    const z0 = to2D(cs, GM, (q) => (q.far ? 1 : undefined)), z1 = to2D(cs, GM, (q) => (!q.far && !ok(q) ? 1 : undefined)), z2 = to2D(cs, GM, (q) => (ok(q) ? Math.exp(q.l45 + S.c45) : undefined));
+    const r0 = this.rec(0, 0), r1 = this.rec(S.cD, S.c45); const tt = S.protos; const sym = ['circle', 'square', 'diamond', 'triangle-up'];
+    draw('p10a', [
+      { type: 'heatmap', x: xs, y: ys, z: z0, colorscale: [[0, 'rgba(128,128,128,.25)'], [1, 'rgba(128,128,128,.25)']], showscale: false, hoverinfo: 'skip' },
+      { type: 'heatmap', x: xs, y: ys, z: z1, colorscale: [[0, 'rgba(220,38,38,.28)'], [1, 'rgba(220,38,38,.28)']], showscale: false, hoverinfo: 'skip' },
+      { type: 'heatmap', x: xs, y: ys, z: z2, colorscale: 'Viridis', colorbar: MOB() ? { orientation: 'h', title: { text: 'τ45 po korekcie [%]', side: 'top' }, thickness: 10, len: 0.9, y: -0.3, yanchor: 'top' } : { title: { text: 'τ45 [%]', side: 'right' }, thickness: 12, len: 0.9 }, hovertemplate: 'smukłość %{x:.1f}<br>φ %{y:.1f} %<br>τ45 %{z:.2f} %<extra></extra>' },
+      { type: 'scatter', mode: 'markers+text', x: tt.map((p) => p.c.s), y: tt.map((p) => p.c.ph), text: tt.map((p, i) => String(i + 1)), textposition: 'top center', name: 'prototypy (numer)', marker: { size: 11, color: tt.map((p) => (p.measured ? c.ok : c.fg)), symbol: tt.map((p) => sym[(p.round - 1) % 4]), line: { width: 1.5, color: c.fg } } },
+      ...(r0 ? [{ type: 'scatter', mode: 'markers', x: [r0.s], y: [r0.ph], name: 'rekomendacja z modelu bez korekty', marker: { size: 14, symbol: 'x', color: c.bad, line: { width: 2 } } }] : []),
+      ...(S.corrected && r1 ? [{ type: 'scatter', mode: 'markers', x: [r1.s], y: [r1.ph], name: 'rekomendacja po korekcie', marker: { size: 16, symbol: 'star', color: c.b, line: { width: 1.5, color: c.fg } } }] : []),
+    ], { title: { text: 'Mapa decyzji (po korekcie, jeśli już zrobiona)', font: { size: 12 } }, xaxis: { title: { text: 'smukłość t/Ø [–]' }, range: [1, 12] }, yaxis: lax(0.5, 30, 'prześwit φ [%] (skala log)'), margin: MOB() ? { b: 200, l: 48, r: 8 } : { b: 110 }, legend: { y: MOB() ? -0.62 : -0.32 } });
+    const rows = tt.map((p, i) => [i + 1, p.round, p.role, fmt(p.c.dm, 0), fmt(p.c.pm, 0), fmt(p.c.ph, 1), `${fmt(Math.exp(p.c.l45), 2)} (${fmt(Math.exp(p.c.l45 - 2 * p.c.s45), 2)}–${fmt(Math.exp(p.c.l45 + 2 * p.c.s45), 2)})`, fmt(Math.exp(p.c.lD), 2), p.measured ? fmt(Math.exp(p.l45), 2) : '–', p.measured ? fmt(Math.exp(p.lD), 2) : '–']);
+    $('t10').innerHTML = rows.length ? table(rows, ['Nr', 'Runda', 'Rola', 'Ø wylotu [µm]', 'Rozstaw [µm]', 'φ [%]', 'τ45 model [%] (±2σ)', 'D model [m]', 'τ45 lab. [%]', 'D lab. [m]']) : '<p class="note">Kliknij „1. Wybierz prototypy”.</p>';
+    const m = tt.filter((p) => p.measured); const xs2 = m.map((p) => tt.indexOf(p) + 1); const eb = (arr, f) => ({ type: 'data', symmetric: false, array: arr.map((p) => Math.exp(f(p)) * (Math.exp(2 * p.u) - 1)), arrayminus: arr.map((p) => Math.exp(f(p)) * (1 - Math.exp(-2 * p.u))) });
+    const tr = [
+      { type: 'scatter', mode: 'markers', x: xs2, y: m.map((p) => Math.exp(p.l45 - p.c.l45)), error_y: eb(m, (p) => p.l45 - p.c.l45), name: 'τ45: lab./model', marker: { size: 10, color: c.a } },
+      { type: 'scatter', mode: 'markers', x: xs2, y: m.map((p) => Math.exp(p.lD - p.c.lD)), error_y: eb(m, (p) => p.lD - p.c.lD), name: 'D_niewid: lab./model', marker: { size: 10, color: c.b, symbol: 'square' } },
+      { type: 'scatter', mode: 'lines', x: [0.5, Math.max(tt.length, 1) + 0.5], y: [1, 1], line: { color: c.mu, dash: 'dot' }, name: 'zgodność (1)' },
+    ];
+    if (S.corrected) { const xe = [0.5, Math.max(tt.length, 1) + 0.5]; tr.push({ type: 'scatter', mode: 'lines', x: xe, y: [Math.exp(S.c45), Math.exp(S.c45)], line: { color: c.a, dash: 'dash' }, name: 'korekta τ45 (estymata)' }, { type: 'scatter', mode: 'lines', x: xe, y: [Math.exp(S.cD), Math.exp(S.cD)], line: { color: c.b, dash: 'dash' }, name: 'korekta D (estymata)' }); }
+    draw('p10b', tr, { title: { text: 'Lab. do modelu (słupki ±2u)', font: { size: 13 } }, xaxis: { title: { text: 'numer prototypu [–]' }, dtick: 1 }, yaxis: { title: { text: 'lab./model [×]' }, rangemode: 'tozero' }, margin: { t: 44, b: 100 }, legend: { y: -0.4 } });
+    const kp = []; const trueDof = (q) => Math.exp(q.lD + bD), trueT = (q) => Math.exp(q.l45 + b45); let truBest = null; for (const q of cand) if (trueDof(q) <= 1 && (!truBest || trueT(q) > trueT(truBest))) truBest = q;
+    const show = (r, label) => { if (!r) return `${label}: brak punktu`; const d = trueDof(r); return `<div><b>${fmt(trueT(r), 2)} % / ${fmt(d, 2)} m</b>${label}: Ø ${fmt(r.dm, 0)} µm, rozstaw ${fmt(r.pm, 0)} µm, naprawdę ${d <= 1 ? '<span class="tak">dopuszczalne</span>' : '<span class="nie">łamie D ≤ 1 m</span>'}</div>`; };
+    $('k10').innerHTML = (r0 ? show(r0, 'bez korekty') : '') + (S.corrected && r1 ? show(r1, 'po korekcie') : '') + (truBest ? `<div><b>${fmt(trueT(truBest), 2)} % / ${fmt(trueDof(truBest), 2)} m</b>prawdziwe optimum (ukryte): Ø ${fmt(truBest.dm, 0)} µm, rozstaw ${fmt(truBest.pm, 0)} µm</div>` : '');
+    let txt = `<b class="t">Co z tego wynika dla otworków:</b> ${this.msg || 'Wybierz prototypy, zmierz je i skoryguj model.'}`;
+    if (S.corrected) { const e = S.e45, d = S.eD; const sig = (x) => (Math.abs(x.mu) > 2 * x.u ? '<span class="tak">istotna</span>' : '<span class="nie">nieistotna</span>'); txt += ` Estymata korekty: τ45 × ${fmt(Math.exp(e.mu), 2)} (±2u: ${fmt(Math.exp(e.mu - 2 * e.u), 2)}–${fmt(Math.exp(e.mu + 2 * e.u), 2)}, ${sig(e)}), D × ${fmt(Math.exp(d.mu), 2)} (±2u: ${fmt(Math.exp(d.mu - 2 * d.u), 2)}–${fmt(Math.exp(d.mu + 2 * d.u), 2)}, ${sig(d)}); prawdziwe ukryte odchylenia to × ${fmt(Math.exp(b45), 2)} i × ${fmt(Math.exp(bD), 2)}. ${S.s45 ? `Nachylenie ln lab. względem ln model: τ45 ${fmt(S.s45.b, 2)} ± ${fmt(2 * S.s45.u, 2)}, D ${fmt(S.sD.b, 2)} ± ${fmt(2 * S.sD.u, 2)} (blisko 1 oznacza, że wystarczy mnożnik).` : ''} ${r0 && r1 ? (trueDof(r0) > 1 && trueDof(r1) <= 1 ? 'Bez korekty rekomendacja łamała granicę D, po korekcie jest dopuszczalna: pomiar się opłacił.' : trueDof(r0) <= 1 && trueDof(r1) <= 1 ? 'Obie rekomendacje są dopuszczalne; porównaj τ45 w kafelkach.' : trueDof(r1) > 1 ? 'Po korekcie rekomendacja nadal łamie D: potrzeba kolejnej rundy (krok 1 wybierze nowe prototypy w poprawionym obszarze).' : '') : ''}`; }
+    $('w10').innerHTML = txt + ' <span class="note">Laboratorium jest tu symulowane: ten sam model z ukrytym odchyleniem i szumem.</span>';
+  },
+};
+
 /* ---------- start ---------- */
 (function start() {
   const rep = PTS.filter((p) => p.n > 1).length;
   $('daneInfo').textContent = `Dane: ${RAW.n} symulacji (stal 304, układ heksagonalny, elektropolerowana, bez utlenienia i beczki, grubość 0,4–0,5 mm) = ${PTS.length} różnych zestawów parametrów, z czego ${rep} powtarzano z innym ziarnem szumu.`;
-  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { const id = e.target.id; if (CH[id] && !CH[id].done) { CH[id].done = true; CH[id].init(); } io.unobserve(e.target); } }), { rootMargin: '400px' });
-  Object.keys(CH).forEach((id) => io.observe($(id)));
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { const id = e.target.dataset.ch || e.target.id; if (CH[id] && !CH[id].done) { CH[id].done = true; CH[id].init(); } io.unobserve(e.target); } }), { rootMargin: '400px' });
+  const EL = { r3h: 'c3h', r4toy: 'c4t' };
+  Object.keys(CH).forEach((id) => { const el = $(EL[id] || id); el.dataset.ch = id; io.observe(el); });
   const redraw = () => Object.values(CH).forEach((c) => { if (c.done && c.render) c.render(); });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTimeout(redraw, 50));
   window.__CH = CH;
